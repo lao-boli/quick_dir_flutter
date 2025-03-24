@@ -69,12 +69,13 @@ class MainScreen extends HookConsumerWidget {
     final titles = activeApps.map((e) => e.title).toList();
 
     if (titles.any((element) => containsPathInTitle(element, path))) {
-      final result = await Process.run(
-          'D:\\projects\\IdeaProjects\\quick_dir\\windowutil.exe',
-          ["window-to-top", path]);
-      if (result.exitCode != 0) {
-        SmartDialog.showToast('窗口未找到');
-      }
+      Process.run('D:\\projects\\IdeaProjects\\quick_dir\\windowutil.exe',
+          ["window-to-top", path]).then((value) {
+        if (value.exitCode != 0) {
+          SmartDialog.showToast('窗口未找到');
+        }
+        return null;
+      });
       return;
     } else {
       Process.run('explorer', [path]);
