@@ -1,222 +1,88 @@
+// main.dart
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
+import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:quick_dir_flutter/util/log.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:ffi/ffi.dart';
 import 'package:win32/win32.dart';
+
+part 'main.g.dart'; // 生成的代码文件
+
 typedef NativeWindowProc = Uint32 Function(IntPtr hwnd, IntPtr lParam);
 typedef DartWindowProc = int Function(int hwnd, int lParam);
 
 // 数据模型
-class PathConfig {
-  Map<String, String> paths = {};
-
-  PathConfig.fromJson(Map<String, dynamic> json) {
-    paths = Map<String, String>.from(json['paths'] ?? {});
-  }
-
-  Map<String, dynamic> toJson() => {'paths': paths};
-}
-
-void main() => runApp(MyApp());
-
-class MyApp extends StatelessWidget {
+@riverpod
+class PathConfig extends _$PathConfig {
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Path Manager',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: MainScreen(),
-    );
-  }
-}
+  Map<String, String> build() => {};
 
-class MainScreen extends StatefulWidget {
-  @override
-  _MainScreenState createState() => _MainScreenState();
-}
-
-class _MainScreenState extends State<MainScreen> {
-  final String configFile = 'path_manager.json';
-  PathConfig config = PathConfig.fromJson({'paths': {}});
-  List<String> filteredKeys = [];
-  TextEditingController searchController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadConfig();
-    searchController.addListener(_onSearchChanged);
-  }
-
-  // 加载配置
-  Future<void> _loadConfig() async {
+  Future<void> load() async {
     final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/$configFile');
+    final file = File('${dir.path}/path_manager.json');
     if (await file.exists()) {
       final contents = await file.readAsString();
-      setState(() {
-        config = PathConfig.fromJson(json.decode(contents));
-        filteredKeys = _getSortedKeys();
-      });
+      state = Map<String, String>.from(json.decode(contents)['paths'] ?? {});
     }
   }
 
-  // 保存配置
-  Future<void> _saveConfig() async {
+  Future<void> _save() async {
     final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/$configFile');
-    await file.writeAsString(json.encode(config.toJson()));
+    final file = File('${dir.path}/path_manager.json');
+    await file.writeAsString(json.encode({'paths': state}));
   }
 
-  List<String> _getSortedKeys() {
-    final keys = config.paths.keys.toList();
-    keys.sort();
-    return keys;
+  void addPath(String name, String path) {
+    state = {...state, name: path};
+    _save();
   }
 
-  void _onSearchChanged() {
-    final query = searchController.text.toLowerCase();
-    setState(() {
-      filteredKeys = _getSortedKeys()
-          .where((key) => key.toLowerCase().contains(query))
-          .toList();
-    });
+  void deletePath(String name) {
+    state = {...state..remove(name)};
+    _save();
   }
+}
 
-  // 添加路径对话框
-  void _showAddDialog() {
-    String name = '';
-    String path = '';
+// 搜索功能
+@riverpod
+class SearchQuery extends _$SearchQuery {
+  @override
+  String build() => '';
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Add New Path"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              decoration: InputDecoration(labelText: "Name"),
-              onChanged: (v) => name = v,
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(labelText: "Path"),
-                    readOnly: true,
-                    controller: TextEditingController(text: path),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.folder_open),
-                  onPressed: () async {
-                    final dir = await FilePicker.platform.getDirectoryPath();
-                    if (dir != null) path = dir;
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (name.isNotEmpty && path.isNotEmpty) {
-                setState(() {
-                  config.paths[name] = path;
-                  _saveConfig();
-                  filteredKeys = _getSortedKeys();
-                });
-                Navigator.pop(context);
-              }
-            },
-            child: Text("Add"),
-          ),
-        ],
-      ),
-    );
-  }
+  void updateQuery(String query) => state = query;
+}
 
-  // 删除路径对话框
-  void _showDeleteDialog() {
-    String? selectedKey;
+// 过滤后的键列表
+@riverpod
+List<String> filteredKeys(FilteredKeysRef ref) {
+  final query = ref.watch(searchQueryProvider).toLowerCase();
+  final keys = ref.watch(pathConfigProvider.select((value) => value.keys.toList()));
+  keys.sort();
+  return keys.where((key) => key.toLowerCase().contains(query)).toList();
+}
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Delete Path"),
-        content: DropdownButtonFormField<String>(
-          items: filteredKeys
-              .map((key) => DropdownMenuItem(value: key, child: Text(key)))
-              .toList(),
-          onChanged: (v) => selectedKey = v,
-          decoration: InputDecoration(labelText: "Select Path"),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (selectedKey != null) {
-                setState(() {
-                  config.paths.remove(selectedKey);
-                  _saveConfig();
-                  filteredKeys = _getSortedKeys();
-                });
-                Navigator.pop(context);
-              }
-            },
-            child: Text("Delete"),
-          ),
-        ],
-      ),
-    );
-  }
+// 窗口管理器
+@Riverpod(keepAlive: true)
+WindowManager windowManager(WindowManagerRef ref) => WindowManager();
 
-  // 打开路径
-  void _openPath(String path) async {
-    if (_activateExplorerWindow(path)) return;
-
-    final dir = Directory(path);
-    if (await dir.exists()) {
-      Process.run('explorer', [dir.absolute.path]);
-    } else {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text("Error"),
-          content: Text("Path does not exist"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("OK"),
-            ),
-          ],
-        ),
-      );
-    }
-  }
-
-  // 使用Win32 API检测并激活窗口
-  bool _activateExplorerWindow(String path) {
+class WindowManager {
+  bool activateExplorerWindow(String path) {
     final ptr = calloc<IntPtr>();
     final pathPtr = path.toNativeUtf16();
 
     try {
-       EnumWindows(
-      Pointer.fromFunction<NativeWindowProc>(_enumWindowsProc, 0),
-      pathPtr.address,
-    );
+      EnumWindows(
+        Pointer.fromFunction<NativeWindowProc>(_enumWindowsProc, 0),
+        pathPtr.address,
+      );
+
       final hwnd = ptr.value;
       if (hwnd != 0) {
         ShowWindow(hwnd, SW_RESTORE);
@@ -225,7 +91,7 @@ class _MainScreenState extends State<MainScreen> {
       }
     } finally {
       free(pathPtr);
-      free(ptr);
+      calloc.free(ptr);
     }
     return false;
   }
@@ -238,7 +104,6 @@ class _MainScreenState extends State<MainScreen> {
       final title = wsalloc(256);
       GetWindowText(hwnd, title, 256);
 
-      // 获取传入的路径参数
       final pathPtr = Pointer<Utf16>.fromAddress(lParam);
       final targetPath = pathPtr.toDartString();
 
@@ -247,46 +112,185 @@ class _MainScreenState extends State<MainScreen> {
         pHwnd.value = hwnd;
         free(title);
         free(className);
-        return 0; // 停止枚举
+        return 0;
       }
       free(title);
     }
     free(className);
-    return 1; // 继续枚举
+    return 1;
   }
+}
 
+void main() => runApp(
+  ProviderScope(
+    child: MyApp(),
+    overrides: [
+      pathConfigProvider.overrideWith(() => PathConfig()..load()),
+    ],
+  ),
+);
+
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Path Manager',
+      navigatorObservers: [FlutterSmartDialog.observer],
+      builder: FlutterSmartDialog.init(),
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const MainScreen(),
+    );
+  }
+}
+
+class MainScreen extends HookConsumerWidget {
+  const MainScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final searchController = useTextEditingController();
+
     return Scaffold(
       appBar: AppBar(
         title: TextField(
           controller: searchController,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             hintText: "Search...",
             border: InputBorder.none,
           ),
+          onChanged: (value) =>
+            ref.read(searchQueryProvider.notifier).updateQuery(value),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.add),
-            onPressed: _showAddDialog,
+            icon: const Icon(Icons.add),
+            onPressed: () => _showAddDialog(ref),
           ),
           IconButton(
-            icon: Icon(Icons.delete),
-            onPressed: _showDeleteDialog,
+            icon: const Icon(Icons.delete),
+            onPressed: () => _showDeleteDialog(ref),
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: filteredKeys.length,
-        itemBuilder: (context, index) {
-          final key = filteredKeys[index];
-          return ListTile(
-            title: Text(key),
-            subtitle: Text(config.paths[key] ?? ''),
-            onTap: () => _openPath(config.paths[key]!),
-          );
-        },
+      body: _buildPathList(ref),
+    );
+  }
+
+  Widget _buildPathList(WidgetRef ref) {
+    final paths = ref.watch(filteredKeysProvider);
+
+    return ListView.builder(
+      itemCount: paths.length,
+      itemBuilder: (context, index) {
+        final key = paths[index];
+        return ListTile(
+          title: Text(key),
+          subtitle: Text(ref.watch(pathConfigProvider)[key] ?? ''),
+          onTap: () => _openPath(ref, key),
+        );
+      },
+    );
+  }
+
+  void _openPath(WidgetRef ref, String key) {
+    final path = ref.read(pathConfigProvider)[key];
+    if (path == null) return;
+
+    final windowManager = ref.read(windowManagerProvider);
+    if (!windowManager.activateExplorerWindow(path)) {
+      Process.run('explorer', [path]);
+    }
+  }
+
+  void _showAddDialog(WidgetRef ref) {
+    final nameController = TextEditingController();
+    final pathController = TextEditingController();
+
+    showDialog(
+      context: ref.context,
+      builder: (context) => AlertDialog(
+        title: const Text("Add New Path"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: "Name"),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: pathController,
+                    decoration: const InputDecoration(labelText: "Path"),
+                    readOnly: true,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.folder_open),
+                  onPressed: () async {
+                    final dir = await FilePicker.platform.getDirectoryPath();
+                    if (dir != null) pathController.text = dir;
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Log.i( "Adding path: ${nameController.text} -> ${pathController.text}");
+              if (nameController.text.isNotEmpty &&
+                  pathController.text.isNotEmpty) {
+                ref.read(pathConfigProvider.notifier).addPath(
+                  nameController.text,
+                  pathController.text,
+                );
+                Navigator.pop(context);
+              } else {
+                SmartDialog.showToast("Please fill in all fields.");
+              }
+            },
+            child: const Text("Add"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteDialog(WidgetRef ref) {
+    String? selectedKey;
+
+    showDialog(
+      context: ref.context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete Path"),
+        content: DropdownButtonFormField<String>(
+          items: ref.read(filteredKeysProvider).map((key) =>
+            DropdownMenuItem(value: key, child: Text(key))).toList(),
+          onChanged: (v) => selectedKey = v,
+          decoration: const InputDecoration(labelText: "Select Path"),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (selectedKey != null) {
+                ref.read(pathConfigProvider.notifier).deletePath(selectedKey!);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text("Delete"),
+          ),
+        ],
       ),
     );
   }
