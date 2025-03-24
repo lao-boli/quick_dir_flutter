@@ -2,18 +2,17 @@
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
-import 'package:ffi/ffi.dart';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:path/path.dart' as Path;
+import 'package:path_provider/path_provider.dart';
 import 'package:quick_dir_flutter/util/log.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:system_windows/system_windows.dart';
-import 'package:path/path.dart' as Path;
-import 'package:win32/win32.dart';
 
 part 'main.g.dart'; // 生成的代码文件
 
@@ -69,59 +68,6 @@ List<String> filteredKeys(FilteredKeysRef ref) {
       ref.watch(pathConfigProvider.select((value) => value.keys.toList()));
   keys.sort();
   return keys.where((key) => key.toLowerCase().contains(query)).toList();
-}
-
-// 窗口管理器
-@Riverpod(keepAlive: true)
-WindowManager windowManager(WindowManagerRef ref) => WindowManager();
-
-class WindowManager {
-  bool activateExplorerWindow(String path) {
-    final ptr = calloc<IntPtr>();
-    final pathPtr = path.toNativeUtf16();
-
-    try {
-      EnumWindows(
-        Pointer.fromFunction<NativeWindowProc>(_enumWindowsProc, 0),
-        pathPtr.address,
-      );
-
-      final hwnd = ptr.value;
-      if (hwnd != 0) {
-        ShowWindow(hwnd, SW_RESTORE);
-        SetForegroundWindow(hwnd);
-        return true;
-      }
-    } finally {
-      free(pathPtr);
-      calloc.free(ptr);
-    }
-    return false;
-  }
-
-  static int _enumWindowsProc(int hwnd, int lParam) {
-    final className = wsalloc(256);
-    GetClassName(hwnd, className, 256);
-
-    if (className.toDartString() == 'CabinetWClass') {
-      final title = wsalloc(256);
-      GetWindowText(hwnd, title, 256);
-
-      final pathPtr = Pointer<Utf16>.fromAddress(lParam);
-      final targetPath = pathPtr.toDartString();
-
-      if (title.toDartString().contains(targetPath)) {
-        final pHwnd = Pointer<IntPtr>.fromAddress(lParam);
-        pHwnd.value = hwnd;
-        free(title);
-        free(className);
-        return 0;
-      }
-      free(title);
-    }
-    free(className);
-    return 1;
-  }
 }
 
 void main() {

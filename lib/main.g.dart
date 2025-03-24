@@ -20,21 +20,6 @@ final filteredKeysProvider = AutoDisposeProvider<List<String>>.internal(
 );
 
 typedef FilteredKeysRef = AutoDisposeProviderRef<List<String>>;
-String _$windowManagerHash() => r'a292c0acb0a0ea1be76c85253a5d4351f03c9bb1';
-
-/// See also [windowManager].
-@ProviderFor(windowManager)
-final windowManagerProvider = Provider<WindowManager>.internal(
-  windowManager,
-  name: r'windowManagerProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$windowManagerHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-typedef WindowManagerRef = ProviderRef<WindowManager>;
 String _$pathConfigHash() => r'b70dafe66e18567e82c70b31abeeb53384413fe0';
 
 /// See also [PathConfig].
