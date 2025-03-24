@@ -11,6 +11,8 @@ import 'package:quick_dir_flutter/util/log.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:system_windows/system_windows.dart';
+import 'package:path/path.dart' as Path;
 import 'package:win32/win32.dart';
 
 part 'main.g.dart'; // 生成的代码文件
@@ -63,7 +65,8 @@ class SearchQuery extends _$SearchQuery {
 @riverpod
 List<String> filteredKeys(FilteredKeysRef ref) {
   final query = ref.watch(searchQueryProvider).toLowerCase();
-  final keys = ref.watch(pathConfigProvider.select((value) => value.keys.toList()));
+  final keys =
+      ref.watch(pathConfigProvider.select((value) => value.keys.toList()));
   keys.sort();
   return keys.where((key) => key.toLowerCase().contains(query)).toList();
 }
@@ -121,14 +124,16 @@ class WindowManager {
   }
 }
 
-void main() => runApp(
-  ProviderScope(
-    child: MyApp(),
-    overrides: [
-      pathConfigProvider.overrideWith(() => PathConfig()..load()),
-    ],
-  ),
-);
+void main() {
+  runApp(
+    ProviderScope(
+      child: MyApp(),
+      overrides: [
+        pathConfigProvider.overrideWith(() => PathConfig()..load()),
+      ],
+    ),
+  );
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -159,7 +164,7 @@ class MainScreen extends HookConsumerWidget {
             border: InputBorder.none,
           ),
           onChanged: (value) =>
-            ref.read(searchQueryProvider.notifier).updateQuery(value),
+              ref.read(searchQueryProvider.notifier).updateQuery(value),
         ),
         actions: [
           IconButton(
@@ -192,14 +197,42 @@ class MainScreen extends HookConsumerWidget {
     );
   }
 
-  void _openPath(WidgetRef ref, String key) {
+  void _openPath(WidgetRef ref, String key) async {
     final path = ref.read(pathConfigProvider)[key];
+    Log.i(path);
     if (path == null) return;
+    var systemWindows = SystemWindows();
 
-    final windowManager = ref.read(windowManagerProvider);
-    if (!windowManager.activateExplorerWindow(path)) {
+    final activeApps = await systemWindows.getActiveApps();
+    final titles = activeApps.map((e) => e.title).toList();
+
+    if (titles.any((element) => containsPathInTitle(element, path))) {
+     final result = await Process.run('D:\\projects\\IdeaProjects\\quick_dir\\windowutil.exe', ["window-to-top",path]);
+     if (result.exitCode != 0) {
+       SmartDialog.showToast('窗口未找到');
+     }
+      return;
+    } else {
       Process.run('explorer', [path]);
     }
+
+  }
+
+  bool containsPathInTitle(String title, String path) {
+    // 尝试匹配不同格式的路径显示
+    String normalizedPath = Path.normalize(path);
+    List<String> possibleFormats = [
+      normalizedPath,
+      Path.basename(normalizedPath),
+      '$normalizedPath - 文件资源管理器',
+    ];
+
+    for (String format in possibleFormats) {
+      if (title == format || title == '$format - 文件资源管理器') {
+        return true;
+      }
+    }
+    return false;
   }
 
   void _showAddDialog(WidgetRef ref) {
@@ -244,13 +277,14 @@ class MainScreen extends HookConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              Log.i( "Adding path: ${nameController.text} -> ${pathController.text}");
+              Log.i(
+                  "Adding path: ${nameController.text} -> ${pathController.text}");
               if (nameController.text.isNotEmpty &&
                   pathController.text.isNotEmpty) {
                 ref.read(pathConfigProvider.notifier).addPath(
-                  nameController.text,
-                  pathController.text,
-                );
+                      nameController.text,
+                      pathController.text,
+                    );
                 Navigator.pop(context);
               } else {
                 SmartDialog.showToast("Please fill in all fields.");
@@ -271,8 +305,10 @@ class MainScreen extends HookConsumerWidget {
       builder: (context) => AlertDialog(
         title: const Text("Delete Path"),
         content: DropdownButtonFormField<String>(
-          items: ref.read(filteredKeysProvider).map((key) =>
-            DropdownMenuItem(value: key, child: Text(key))).toList(),
+          items: ref
+              .read(filteredKeysProvider)
+              .map((key) => DropdownMenuItem(value: key, child: Text(key)))
+              .toList(),
           onChanged: (v) => selectedKey = v,
           decoration: const InputDecoration(labelText: "Select Path"),
         ),

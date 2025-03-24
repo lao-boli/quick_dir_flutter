@@ -661,6 +661,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.2.0"
+  system_windows:
+    dependency: "direct main"
+    description:
+      name: system_windows
+      sha256: a62e6ffe38bed373b1648455afd8ad7b744bbf12871f0b9441942c5ba6330f0a
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.3.2"
   term_glyph:
     dependency: transitive
     description:

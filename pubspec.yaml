@@ -36,6 +36,8 @@ dependencies:
   ffi: ^2.0.1
   logger: ^2.0.2+1
   flutter_smart_dialog: ^4.9.6 #各种弹窗 Toast\Dialog\Popup
+  system_windows: ^0.3.2
+
   flutter_riverpod:
   hooks_riverpod:
   riverpod_annotation:
