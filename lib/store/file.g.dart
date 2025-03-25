@@ -3,6 +3,53 @@
 part of 'file.dart';
 
 // **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_$PathItemImpl _$$PathItemImplFromJson(Map<String, dynamic> json) =>
+    _$PathItemImpl(
+      name: json['name'] as String,
+      path: json['path'] as String,
+    );
+
+Map<String, dynamic> _$$PathItemImplToJson(_$PathItemImpl instance) =>
+    <String, dynamic>{
+      'name': instance.name,
+      'path': instance.path,
+    };
+
+_$PathGroupImpl _$$PathGroupImplFromJson(Map<String, dynamic> json) =>
+    _$PathGroupImpl(
+      name: json['name'] as String,
+      paths: (json['paths'] as List<dynamic>?)
+              ?.map((e) => PathItem.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const <PathItem>[],
+    );
+
+Map<String, dynamic> _$$PathGroupImplToJson(_$PathGroupImpl instance) =>
+    <String, dynamic>{
+      'name': instance.name,
+      'paths': instance.paths,
+    };
+
+_$PathCollectionImpl _$$PathCollectionImplFromJson(Map<String, dynamic> json) =>
+    _$PathCollectionImpl(
+      name: json['name'] as String,
+      groups: (json['groups'] as List<dynamic>?)
+              ?.map((e) => PathGroup.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const <PathGroup>[],
+    );
+
+Map<String, dynamic> _$$PathCollectionImplToJson(
+        _$PathCollectionImpl instance) =>
+    <String, dynamic>{
+      'name': instance.name,
+      'groups': instance.groups,
+    };
+
+// **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 

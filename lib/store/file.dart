@@ -1,67 +1,43 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:convert';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'file.g.dart';
+part 'file.freezed.dart';
 
-// 基本路径对象
-class PathItem {
-  final String name;
-  final String path;
+@unfreezed
+class PathItem with _$PathItem {
+  factory PathItem({
+    required String name,
+    required String path,
+  }) = _PathItem;
 
-  PathItem({required this.name, required this.path});
-
-  Map<String, dynamic> toJson() => {
-    'name': name,
-    'path': path,
-  };
-
-  factory PathItem.fromJson(Map<String, dynamic> json) => PathItem(
-    name: json['name'],
-    path: json['path'],
-  );
+  factory PathItem.fromJson(Map<String, dynamic> json) => _$PathItemFromJson(json);
 }
 
-// 路径组
-class PathGroup {
-  final String name;
-  final List<PathItem> paths;
 
-  PathGroup({required this.name, this.paths = const []});
+@unfreezed
+class PathGroup with _$PathGroup {
+  factory PathGroup({
+    required String name,
+    @Default(<PathItem>[]) List<PathItem> paths,
+  }) = _PathGroup;
 
-  Map<String, dynamic> toJson() => {
-    'name': name,
-    'paths': paths.map((p) => p.toJson()).toList(),
-  };
-
-  factory PathGroup.fromJson(Map<String, dynamic> json) => PathGroup(
-    name: json['name'],
-    paths: (json['paths'] as List)
-        .map((p) => PathItem.fromJson(p))
-        .toList(),
-  );
+  factory PathGroup.fromJson(Map<String, dynamic> json) => _$PathGroupFromJson(json);
 }
 
-// 集合（包含多个组）
-class PathCollection {
-  final String name;
-  final List<PathGroup> groups;
 
-  PathCollection({required this.name, this.groups = const []});
+@unfreezed
+class PathCollection with _$PathCollection {
+  factory PathCollection({
+    required String name,
+    @Default(<PathGroup>[]) List<PathGroup> groups,
+  }) = _PathCollection;
 
-  Map<String, dynamic> toJson() => {
-    'name': name,
-    'groups': groups.map((g) => g.toJson()).toList(),
-  };
-
-  factory PathCollection.fromJson(Map<String, dynamic> json) => PathCollection(
-    name: json['name'],
-    groups: (json['groups'] as List)
-        .map((g) => PathGroup.fromJson(g))
-        .toList(),
-  );
+  factory PathCollection.fromJson(Map<String, dynamic> json) => _$PathCollectionFromJson(json);
 }
 
 @riverpod
@@ -237,27 +213,27 @@ List<String> searchResults(SearchResultsRef ref) {
   return results;
 }
 
-// 为数据类添加CopyWith方法
-extension PathCollectionCopyWith on PathCollection {
-  PathCollection copyWith({
-    String? name,
-    List<PathGroup>? groups,
-  }) {
-    return PathCollection(
-      name: name ?? this.name,
-      groups: groups ?? this.groups,
-    );
-  }
-}
-
-extension PathGroupCopyWith on PathGroup {
-  PathGroup copyWith({
-    String? name,
-    List<PathItem>? paths,
-  }) {
-    return PathGroup(
-      name: name ?? this.name,
-      paths: paths ?? this.paths,
-    );
-  }
-}
+// // 为数据类添加CopyWith方法
+// extension PathCollectionCopyWith on PathCollection {
+//   PathCollection copyWith({
+//     String? name,
+//     List<PathGroup>? groups,
+//   }) {
+//     return PathCollection(
+//       name: name ?? this.name,
+//       groups: groups ?? this.groups,
+//     );
+//   }
+// }
+//
+// extension PathGroupCopyWith on PathGroup {
+//   PathGroup copyWith({
+//     String? name,
+//     List<PathItem>? paths,
+//   }) {
+//     return PathGroup(
+//       name: name ?? this.name,
+//       paths: paths ?? this.paths,
+//     );
+//   }
+// }
