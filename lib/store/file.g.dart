@@ -6,26 +6,27 @@ part of 'file.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$filteredKeysHash() => r'e981ae59fe2b862198eaca391d144fd5822b033a';
+String _$searchResultsHash() => r'd1f355457e865839be3c38884b8596300b27c8b0';
 
-/// See also [filteredKeys].
-@ProviderFor(filteredKeys)
-final filteredKeysProvider = AutoDisposeProvider<List<String>>.internal(
-  filteredKeys,
-  name: r'filteredKeysProvider',
-  debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$filteredKeysHash,
+/// See also [searchResults].
+@ProviderFor(searchResults)
+final searchResultsProvider = AutoDisposeProvider<List<String>>.internal(
+  searchResults,
+  name: r'searchResultsProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$searchResultsHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef FilteredKeysRef = AutoDisposeProviderRef<List<String>>;
-String _$pathConfigHash() => r'b70dafe66e18567e82c70b31abeeb53384413fe0';
+typedef SearchResultsRef = AutoDisposeProviderRef<List<String>>;
+String _$pathConfigHash() => r'a8cd5c14373fe83b7c235c96fb8234e32ed433e0';
 
 /// See also [PathConfig].
 @ProviderFor(PathConfig)
 final pathConfigProvider =
-    AutoDisposeNotifierProvider<PathConfig, Map<String, String>>.internal(
+    AutoDisposeNotifierProvider<PathConfig, List<PathCollection>>.internal(
   PathConfig.new,
   name: r'pathConfigProvider',
   debugGetCreateSourceHash:
@@ -34,7 +35,7 @@ final pathConfigProvider =
   allTransitiveDependencies: null,
 );
 
-typedef _$PathConfig = AutoDisposeNotifier<Map<String, String>>;
+typedef _$PathConfig = AutoDisposeNotifier<List<PathCollection>>;
 String _$searchQueryHash() => r'c20c8b67cdf9a8c8820d422de83c580e88655dcd';
 
 /// See also [SearchQuery].
