@@ -83,11 +83,44 @@ class MainScreen extends HookConsumerWidget {
     void showContextMenu() {
       // 上下文菜单逻辑
     }
+
     void delete() {
-      // ref.read(pathConfigProvider.notifier).deletePath(
-      //     collectionIndex: collectionIndex,
-      //     groupIndex: groupIndex,
-      //     pathIndex: pathIndex)
+      if (node.data == null) {
+        SmartDialog.showToast('Cannot delete node with null data');
+      }
+
+      if (node.data is! PathItem) {
+        SmartDialog.showToast('Invalid data type for deletion. '
+            'Expected: PathItem, Actual: ${node.data.runtimeType}');
+      }
+      final item = node.data as PathItem;
+      ref.read(pathConfigProvider.notifier).deleteItem(
+            item.id,
+          );
+    }
+    void showDeleteDialog() {
+      // 删除逻辑
+      showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+                title: const Text("Delete Path"),
+                content: const Text("Are you sure you want to delete this path?"),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("Cancel"),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      delete();
+                      Navigator.pop(context);
+                    }, child:  const Text("Delete"),
+                  )
+                ]
+            );
+          }
+      );
     }
 
     return ListTile(
@@ -96,7 +129,7 @@ class MainScreen extends HookConsumerWidget {
       onTap: handleTap,
       trailing: IconButton(
         icon: const Icon(Icons.delete),
-        onPressed: () => delete(),
+        onPressed: () => showDeleteDialog(),
       ),
     );
   }
@@ -205,11 +238,12 @@ class MainScreen extends HookConsumerWidget {
                         )
                         .groups
                         .map((group) {
-                      return DropdownMenuItem(
-                        value: group.id,
-                        child: Text(group.name),
-                      );
-                    }).toList(),
+                          return DropdownMenuItem(
+                            value: group.id,
+                            child: Text(group.name),
+                          );
+                        })
+                        .toList(),
                     onChanged: ref.watch(selectedCollectionIdProvider) != null
                         ? (groupId) {
                             ref.read(selectedGroupIdProvider.notifier).state =
