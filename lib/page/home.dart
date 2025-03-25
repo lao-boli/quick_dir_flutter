@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -69,14 +71,22 @@ class MainScreen extends HookConsumerWidget {
   }
 
   Widget buildPathItemTile(WidgetRef ref, BuildContext context, PathNode node) {
+    Log.i(node);
     void handleTap() {
       if (node.path != null) {
         // 处理路径打开逻辑
+        _openPath(ref, node.path!);
       }
     }
 
     void showContextMenu() {
       // 上下文菜单逻辑
+    }
+    void delete() {
+      // ref.read(pathConfigProvider.notifier).deletePath(
+      //     collectionIndex: collectionIndex,
+      //     groupIndex: groupIndex,
+      //     pathIndex: pathIndex)
     }
 
     return ListTile(
@@ -84,8 +94,8 @@ class MainScreen extends HookConsumerWidget {
       subtitle: node.path != null ? Text(node.path!) : null,
       onTap: handleTap,
       trailing: IconButton(
-        icon: const Icon(Icons.more_vert),
-        onPressed: () => showContextMenu(),
+        icon: const Icon(Icons.delete),
+        onPressed: () => delete(),
       ),
     );
   }
