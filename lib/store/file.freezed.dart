@@ -20,7 +20,14 @@ PathItem _$PathItemFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$PathItem {
-  String get name => throw _privateConstructorUsedError;
+  String get id => throw _privateConstructorUsedError;
+  set id(String value) => throw _privateConstructorUsedError; // 新增唯一ID
+  String get collectionId => throw _privateConstructorUsedError; // 新增唯一ID
+  set collectionId(String value) =>
+      throw _privateConstructorUsedError; // 所属集合ID
+  String get groupId => throw _privateConstructorUsedError; // 所属集合ID
+  set groupId(String value) => throw _privateConstructorUsedError; // 所属组ID
+  String get name => throw _privateConstructorUsedError; // 所属组ID
   set name(String value) => throw _privateConstructorUsedError;
   String get path => throw _privateConstructorUsedError;
   set path(String value) => throw _privateConstructorUsedError;
@@ -36,7 +43,12 @@ abstract class $PathItemCopyWith<$Res> {
   factory $PathItemCopyWith(PathItem value, $Res Function(PathItem) then) =
       _$PathItemCopyWithImpl<$Res, PathItem>;
   @useResult
-  $Res call({String name, String path});
+  $Res call(
+      {String id,
+      String collectionId,
+      String groupId,
+      String name,
+      String path});
 }
 
 /// @nodoc
@@ -52,10 +64,25 @@ class _$PathItemCopyWithImpl<$Res, $Val extends PathItem>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? id = null,
+    Object? collectionId = null,
+    Object? groupId = null,
     Object? name = null,
     Object? path = null,
   }) {
     return _then(_value.copyWith(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      collectionId: null == collectionId
+          ? _value.collectionId
+          : collectionId // ignore: cast_nullable_to_non_nullable
+              as String,
+      groupId: null == groupId
+          ? _value.groupId
+          : groupId // ignore: cast_nullable_to_non_nullable
+              as String,
       name: null == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
@@ -76,7 +103,12 @@ abstract class _$$PathItemImplCopyWith<$Res>
       __$$PathItemImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String name, String path});
+  $Res call(
+      {String id,
+      String collectionId,
+      String groupId,
+      String name,
+      String path});
 }
 
 /// @nodoc
@@ -90,10 +122,25 @@ class __$$PathItemImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? id = null,
+    Object? collectionId = null,
+    Object? groupId = null,
     Object? name = null,
     Object? path = null,
   }) {
     return _then(_$PathItemImpl(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      collectionId: null == collectionId
+          ? _value.collectionId
+          : collectionId // ignore: cast_nullable_to_non_nullable
+              as String,
+      groupId: null == groupId
+          ? _value.groupId
+          : groupId // ignore: cast_nullable_to_non_nullable
+              as String,
       name: null == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
@@ -109,11 +156,25 @@ class __$$PathItemImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$PathItemImpl implements _PathItem {
-  _$PathItemImpl({required this.name, required this.path});
+  _$PathItemImpl(
+      {required this.id,
+      required this.collectionId,
+      required this.groupId,
+      required this.name,
+      required this.path});
 
   factory _$PathItemImpl.fromJson(Map<String, dynamic> json) =>
       _$$PathItemImplFromJson(json);
 
+  @override
+  String id;
+// 新增唯一ID
+  @override
+  String collectionId;
+// 所属集合ID
+  @override
+  String groupId;
+// 所属组ID
   @override
   String name;
   @override
@@ -121,7 +182,7 @@ class _$PathItemImpl implements _PathItem {
 
   @override
   String toString() {
-    return 'PathItem(name: $name, path: $path)';
+    return 'PathItem(id: $id, collectionId: $collectionId, groupId: $groupId, name: $name, path: $path)';
   }
 
   @JsonKey(ignore: true)
@@ -139,14 +200,27 @@ class _$PathItemImpl implements _PathItem {
 }
 
 abstract class _PathItem implements PathItem {
-  factory _PathItem({required String name, required String path}) =
-      _$PathItemImpl;
+  factory _PathItem(
+      {required String id,
+      required String collectionId,
+      required String groupId,
+      required String name,
+      required String path}) = _$PathItemImpl;
 
   factory _PathItem.fromJson(Map<String, dynamic> json) =
       _$PathItemImpl.fromJson;
 
   @override
-  String get name;
+  String get id;
+  set id(String value);
+  @override // 新增唯一ID
+  String get collectionId; // 新增唯一ID
+  set collectionId(String value);
+  @override // 所属集合ID
+  String get groupId; // 所属集合ID
+  set groupId(String value);
+  @override // 所属组ID
+  String get name; // 所属组ID
   set name(String value);
   @override
   String get path;
@@ -163,7 +237,12 @@ PathGroup _$PathGroupFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$PathGroup {
-  String get name => throw _privateConstructorUsedError;
+  String get id => throw _privateConstructorUsedError;
+  set id(String value) => throw _privateConstructorUsedError; // 新增唯一ID
+  String get collectionId => throw _privateConstructorUsedError; // 新增唯一ID
+  set collectionId(String value) =>
+      throw _privateConstructorUsedError; // 所属集合ID
+  String get name => throw _privateConstructorUsedError; // 所属集合ID
   set name(String value) => throw _privateConstructorUsedError;
   List<PathItem> get paths => throw _privateConstructorUsedError;
   set paths(List<PathItem> value) => throw _privateConstructorUsedError;
@@ -179,7 +258,8 @@ abstract class $PathGroupCopyWith<$Res> {
   factory $PathGroupCopyWith(PathGroup value, $Res Function(PathGroup) then) =
       _$PathGroupCopyWithImpl<$Res, PathGroup>;
   @useResult
-  $Res call({String name, List<PathItem> paths});
+  $Res call(
+      {String id, String collectionId, String name, List<PathItem> paths});
 }
 
 /// @nodoc
@@ -195,10 +275,20 @@ class _$PathGroupCopyWithImpl<$Res, $Val extends PathGroup>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? id = null,
+    Object? collectionId = null,
     Object? name = null,
     Object? paths = null,
   }) {
     return _then(_value.copyWith(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      collectionId: null == collectionId
+          ? _value.collectionId
+          : collectionId // ignore: cast_nullable_to_non_nullable
+              as String,
       name: null == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
@@ -219,7 +309,8 @@ abstract class _$$PathGroupImplCopyWith<$Res>
       __$$PathGroupImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String name, List<PathItem> paths});
+  $Res call(
+      {String id, String collectionId, String name, List<PathItem> paths});
 }
 
 /// @nodoc
@@ -233,10 +324,20 @@ class __$$PathGroupImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? id = null,
+    Object? collectionId = null,
     Object? name = null,
     Object? paths = null,
   }) {
     return _then(_$PathGroupImpl(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      collectionId: null == collectionId
+          ? _value.collectionId
+          : collectionId // ignore: cast_nullable_to_non_nullable
+              as String,
       name: null == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
@@ -252,11 +353,21 @@ class __$$PathGroupImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$PathGroupImpl implements _PathGroup {
-  _$PathGroupImpl({required this.name, this.paths = const <PathItem>[]});
+  _$PathGroupImpl(
+      {required this.id,
+      required this.collectionId,
+      required this.name,
+      this.paths = const <PathItem>[]});
 
   factory _$PathGroupImpl.fromJson(Map<String, dynamic> json) =>
       _$$PathGroupImplFromJson(json);
 
+  @override
+  String id;
+// 新增唯一ID
+  @override
+  String collectionId;
+// 所属集合ID
   @override
   String name;
   @override
@@ -265,7 +376,7 @@ class _$PathGroupImpl implements _PathGroup {
 
   @override
   String toString() {
-    return 'PathGroup(name: $name, paths: $paths)';
+    return 'PathGroup(id: $id, collectionId: $collectionId, name: $name, paths: $paths)';
   }
 
   @JsonKey(ignore: true)
@@ -283,14 +394,23 @@ class _$PathGroupImpl implements _PathGroup {
 }
 
 abstract class _PathGroup implements PathGroup {
-  factory _PathGroup({required String name, List<PathItem> paths}) =
-      _$PathGroupImpl;
+  factory _PathGroup(
+      {required String id,
+      required String collectionId,
+      required String name,
+      List<PathItem> paths}) = _$PathGroupImpl;
 
   factory _PathGroup.fromJson(Map<String, dynamic> json) =
       _$PathGroupImpl.fromJson;
 
   @override
-  String get name;
+  String get id;
+  set id(String value);
+  @override // 新增唯一ID
+  String get collectionId; // 新增唯一ID
+  set collectionId(String value);
+  @override // 所属集合ID
+  String get name; // 所属集合ID
   set name(String value);
   @override
   List<PathItem> get paths;
@@ -307,7 +427,9 @@ PathCollection _$PathCollectionFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$PathCollection {
-  String get name => throw _privateConstructorUsedError;
+  String get id => throw _privateConstructorUsedError;
+  set id(String value) => throw _privateConstructorUsedError; // 新增唯一ID
+  String get name => throw _privateConstructorUsedError; // 新增唯一ID
   set name(String value) => throw _privateConstructorUsedError;
   List<PathGroup> get groups => throw _privateConstructorUsedError;
   set groups(List<PathGroup> value) => throw _privateConstructorUsedError;
@@ -324,7 +446,7 @@ abstract class $PathCollectionCopyWith<$Res> {
           PathCollection value, $Res Function(PathCollection) then) =
       _$PathCollectionCopyWithImpl<$Res, PathCollection>;
   @useResult
-  $Res call({String name, List<PathGroup> groups});
+  $Res call({String id, String name, List<PathGroup> groups});
 }
 
 /// @nodoc
@@ -340,10 +462,15 @@ class _$PathCollectionCopyWithImpl<$Res, $Val extends PathCollection>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? id = null,
     Object? name = null,
     Object? groups = null,
   }) {
     return _then(_value.copyWith(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
       name: null == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
@@ -364,7 +491,7 @@ abstract class _$$PathCollectionImplCopyWith<$Res>
       __$$PathCollectionImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String name, List<PathGroup> groups});
+  $Res call({String id, String name, List<PathGroup> groups});
 }
 
 /// @nodoc
@@ -378,10 +505,15 @@ class __$$PathCollectionImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? id = null,
     Object? name = null,
     Object? groups = null,
   }) {
     return _then(_$PathCollectionImpl(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
       name: null == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
@@ -397,11 +529,17 @@ class __$$PathCollectionImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$PathCollectionImpl implements _PathCollection {
-  _$PathCollectionImpl({required this.name, this.groups = const <PathGroup>[]});
+  _$PathCollectionImpl(
+      {required this.id,
+      required this.name,
+      this.groups = const <PathGroup>[]});
 
   factory _$PathCollectionImpl.fromJson(Map<String, dynamic> json) =>
       _$$PathCollectionImplFromJson(json);
 
+  @override
+  String id;
+// 新增唯一ID
   @override
   String name;
   @override
@@ -410,7 +548,7 @@ class _$PathCollectionImpl implements _PathCollection {
 
   @override
   String toString() {
-    return 'PathCollection(name: $name, groups: $groups)';
+    return 'PathCollection(id: $id, name: $name, groups: $groups)';
   }
 
   @JsonKey(ignore: true)
@@ -429,14 +567,19 @@ class _$PathCollectionImpl implements _PathCollection {
 }
 
 abstract class _PathCollection implements PathCollection {
-  factory _PathCollection({required String name, List<PathGroup> groups}) =
-      _$PathCollectionImpl;
+  factory _PathCollection(
+      {required String id,
+      required String name,
+      List<PathGroup> groups}) = _$PathCollectionImpl;
 
   factory _PathCollection.fromJson(Map<String, dynamic> json) =
       _$PathCollectionImpl.fromJson;
 
   @override
-  String get name;
+  String get id;
+  set id(String value);
+  @override // 新增唯一ID
+  String get name; // 新增唯一ID
   set name(String value);
   @override
   List<PathGroup> get groups;

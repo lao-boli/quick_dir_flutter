@@ -8,18 +8,26 @@ part of 'file.dart';
 
 _$PathItemImpl _$$PathItemImplFromJson(Map<String, dynamic> json) =>
     _$PathItemImpl(
+      id: json['id'] as String,
+      collectionId: json['collectionId'] as String,
+      groupId: json['groupId'] as String,
       name: json['name'] as String,
       path: json['path'] as String,
     );
 
 Map<String, dynamic> _$$PathItemImplToJson(_$PathItemImpl instance) =>
     <String, dynamic>{
+      'id': instance.id,
+      'collectionId': instance.collectionId,
+      'groupId': instance.groupId,
       'name': instance.name,
       'path': instance.path,
     };
 
 _$PathGroupImpl _$$PathGroupImplFromJson(Map<String, dynamic> json) =>
     _$PathGroupImpl(
+      id: json['id'] as String,
+      collectionId: json['collectionId'] as String,
       name: json['name'] as String,
       paths: (json['paths'] as List<dynamic>?)
               ?.map((e) => PathItem.fromJson(e as Map<String, dynamic>))
@@ -29,12 +37,15 @@ _$PathGroupImpl _$$PathGroupImplFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$$PathGroupImplToJson(_$PathGroupImpl instance) =>
     <String, dynamic>{
+      'id': instance.id,
+      'collectionId': instance.collectionId,
       'name': instance.name,
       'paths': instance.paths,
     };
 
 _$PathCollectionImpl _$$PathCollectionImplFromJson(Map<String, dynamic> json) =>
     _$PathCollectionImpl(
+      id: json['id'] as String,
       name: json['name'] as String,
       groups: (json['groups'] as List<dynamic>?)
               ?.map((e) => PathGroup.fromJson(e as Map<String, dynamic>))
@@ -45,6 +56,7 @@ _$PathCollectionImpl _$$PathCollectionImplFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$$PathCollectionImplToJson(
         _$PathCollectionImpl instance) =>
     <String, dynamic>{
+      'id': instance.id,
       'name': instance.name,
       'groups': instance.groups,
     };
