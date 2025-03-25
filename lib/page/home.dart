@@ -1,9 +1,7 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -13,6 +11,9 @@ import 'package:quick_dir_flutter/util/log.dart';
 import 'package:system_windows/system_windows.dart';
 
 import '../store/tree.dart';
+
+final selectedCollectionIdProvider = StateProvider<String?>((ref) => null);
+final selectedGroupIdProvider = StateProvider<String?>((ref) => null);
 
 class MainScreen extends HookConsumerWidget {
   const MainScreen({super.key});
@@ -150,6 +151,140 @@ class MainScreen extends HookConsumerWidget {
   }
 
   void _showAddDialog(WidgetRef ref) {
+    final nameController = TextEditingController();
+    final pathController = TextEditingController();
+
+    // 重置选择状态
+    ref.read(selectedCollectionIdProvider.notifier).state = null;
+    ref.read(selectedGroupIdProvider.notifier).state = null;
+
+    showDialog(
+      context: ref.context,
+      builder: (context) {
+        final collections = ref.watch(pathConfigProvider);
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Add New Path"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 集合选择下拉框
+                  DropdownButtonFormField<String?>(
+                    value: ref.watch(selectedCollectionIdProvider),
+                    hint: const Text("Select Collection"),
+                    items: collections.map((collection) {
+                      return DropdownMenuItem(
+                        value: collection.id,
+                        child: Text(collection.name),
+                      );
+                    }).toList(),
+                    onChanged: (collectionId) {
+                      ref.read(selectedCollectionIdProvider.notifier).state =
+                          collectionId;
+                      ref.read(selectedGroupIdProvider.notifier).state = null;
+                      setState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 组选择下拉框
+                  DropdownButtonFormField<String?>(
+                    value: ref.watch(selectedGroupIdProvider),
+                    hint: const Text("Select Group"),
+                    items: collections
+                        .firstWhere(
+                          (c) {
+                            Log.i(c.id);
+                            var watch = ref.watch(selectedCollectionIdProvider);
+                            Log.i(watch);
+                            return c.id == watch;
+                          },
+                          orElse: () => PathCollection(id: '', name: ''),
+                        )
+                        .groups
+                        .map((group) {
+                      return DropdownMenuItem(
+                        value: group.id,
+                        child: Text(group.name),
+                      );
+                    }).toList(),
+                    onChanged: ref.watch(selectedCollectionIdProvider) != null
+                        ? (groupId) {
+                            ref.read(selectedGroupIdProvider.notifier).state =
+                                groupId;
+                          }
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 路径名称输入
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: "Name"),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 路径选择
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: pathController,
+                          decoration: const InputDecoration(labelText: "Path"),
+                          readOnly: true,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.folder_open),
+                        onPressed: () async {
+                          final dir =
+                              await FilePicker.platform.getDirectoryPath();
+                          if (dir != null) pathController.text = dir;
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final collectionId = ref.read(selectedCollectionIdProvider);
+                    final groupId = ref.read(selectedGroupIdProvider);
+
+                    if (nameController.text.isEmpty ||
+                        pathController.text.isEmpty ||
+                        collectionId == null ||
+                        groupId == null) {
+                      SmartDialog.showToast("Please fill in all fields.");
+                      return;
+                    }
+
+                    ref.read(pathConfigProvider.notifier).addPath(
+                          collectionId: collectionId,
+                          groupId: groupId,
+                          name: nameController.text,
+                          path: pathController.text,
+                        );
+                    Navigator.pop(context);
+                  },
+                  child: const Text("Add"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showAddDialog2(WidgetRef ref) {
     // final nameController = TextEditingController();
     // final pathController = TextEditingController();
     //
