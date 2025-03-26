@@ -14,6 +14,8 @@ import '../store/tree.dart';
 
 final selectedCollectionIdProvider = StateProvider<String?>((ref) => null);
 final selectedGroupIdProvider = StateProvider<String?>((ref) => null);
+final selectedCollectionProvider =
+    StateProvider<PathCollection?>((ref) => null);
 
 class MainScreen extends HookConsumerWidget {
   const MainScreen({super.key});
@@ -22,18 +24,73 @@ class MainScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final searchController = useTextEditingController();
     final nodes = ref.watch(pathTreeProvider);
+    final selectedCollection = ref.watch(selectedCollectionProvider);
+    final filteredGroups = selectedCollection?.groups ?? [];
+    ref.listen<List<PathCollection>>(pathConfigProvider, (_, collections) {
+      if (collections.isNotEmpty &&
+          ref.read(selectedCollectionProvider) == null) {
+        // 使用postFrameCallback避免build过程中修改状态
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(selectedCollectionProvider.notifier).state =
+              collections.first;
+        });
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
-        title: TextField(
-          controller: searchController,
-          decoration: const InputDecoration(
-            hintText: "Search...",
-            border: InputBorder.none,
-          ),
-          onChanged: (value) =>
-              ref.read(searchQueryProvider.notifier).updateQuery(value),
+        title: Row(
+          children: [
+            // 集合选择下拉框
+            Flexible(
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<PathCollection>(
+                  value: ref.watch(selectedCollectionProvider),
+                  hint: const Text('选择集合', style: TextStyle()),
+                  items: ref.watch(pathConfigProvider).map((collection) {
+                    return DropdownMenuItem(
+                      value: collection,
+                      child: Text(
+                        collection.name,
+                        style: const TextStyle(),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (collection) {
+                    ref.read(selectedCollectionProvider.notifier).state =
+                        collection;
+                  },
+                ),
+              ),
+            ),
+            // 搜索框
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: TextField(
+                  controller: searchController,
+                  decoration: const InputDecoration(
+                    hintText: "搜索...",
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(color: Colors.white70),
+                  ),
+                  style: const TextStyle(color: Colors.white),
+                  onChanged: (value) =>
+                      ref.read(searchQueryProvider.notifier).updateQuery(value),
+                ),
+              ),
+            ),
+          ],
         ),
+        // title: TextField(
+        //   controller: searchController,
+        //   decoration: const InputDecoration(
+        //     hintText: "Search...",
+        //     border: InputBorder.none,
+        //   ),
+        //   onChanged: (value) =>
+        //       ref.read(searchQueryProvider.notifier).updateQuery(value),
+        // ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -45,11 +102,27 @@ class MainScreen extends HookConsumerWidget {
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: nodes.length,
-        itemBuilder: (context, index) =>
-            buildTreeNode(ref, context, nodes[index]),
-      ),
+      body: filteredGroups.isEmpty
+          ? const Center(child: Text("请先选择集合"))
+          : ListView.builder(
+              itemCount: filteredGroups.length,
+              itemBuilder: (context, index) {
+                final group = filteredGroups[index];
+                // 创建虚拟节点来保持原有树结构逻辑
+                final groupNode = PathNode(
+                  label: group.name,
+                  data: group,
+                  children: group.paths
+                      .map((path) => PathNode(
+                            label: path.name,
+                            path: path.path,
+                            data: path,
+                          ))
+                      .toList(),
+                );
+                return buildTreeNode(ref, context, groupNode);
+              },
+            ),
     );
   }
 
@@ -98,6 +171,7 @@ class MainScreen extends HookConsumerWidget {
             item.id,
           );
     }
+
     void showDeleteDialog() {
       // 删除逻辑
       showDialog(
@@ -105,7 +179,8 @@ class MainScreen extends HookConsumerWidget {
           builder: (context) {
             return AlertDialog(
                 title: const Text("Delete Path"),
-                content: const Text("Are you sure you want to delete this path?"),
+                content:
+                    const Text("Are you sure you want to delete this path?"),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
@@ -115,12 +190,11 @@ class MainScreen extends HookConsumerWidget {
                     onPressed: () {
                       delete();
                       Navigator.pop(context);
-                    }, child:  const Text("Delete"),
+                    },
+                    child: const Text("Delete"),
                   )
-                ]
-            );
-          }
-      );
+                ]);
+          });
     }
 
     return ListTile(
@@ -316,68 +390,6 @@ class MainScreen extends HookConsumerWidget {
         );
       },
     );
-  }
-
-  void _showAddDialog2(WidgetRef ref) {
-    // final nameController = TextEditingController();
-    // final pathController = TextEditingController();
-    //
-    // showDialog(
-    //   context: ref.context,
-    //   builder: (context) => AlertDialog(
-    //     title: const Text("Add New Path"),
-    //     content: Column(
-    //       mainAxisSize: MainAxisSize.min,
-    //       children: [
-    //         TextField(
-    //           controller: nameController,
-    //           decoration: const InputDecoration(labelText: "Name"),
-    //         ),
-    //         Row(
-    //           children: [
-    //             Expanded(
-    //               child: TextField(
-    //                 controller: pathController,
-    //                 decoration: const InputDecoration(labelText: "Path"),
-    //                 readOnly: true,
-    //               ),
-    //             ),
-    //             IconButton(
-    //               icon: const Icon(Icons.folder_open),
-    //               onPressed: () async {
-    //                 final dir = await FilePicker.platform.getDirectoryPath();
-    //                 if (dir != null) pathController.text = dir;
-    //               },
-    //             ),
-    //           ],
-    //         ),
-    //       ],
-    //     ),
-    //     actions: [
-    //       TextButton(
-    //         onPressed: () => Navigator.pop(context),
-    //         child: const Text("Cancel"),
-    //       ),
-    //       ElevatedButton(
-    //         onPressed: () {
-    //           Log.i(
-    //               "Adding path: ${nameController.text} -> ${pathController.text}");
-    //           if (nameController.text.isNotEmpty &&
-    //               pathController.text.isNotEmpty) {
-    //             ref.read(pathConfigProvider.notifier).addPath(
-    //                   nameController.text,
-    //                   pathController.text,
-    //                 );
-    //             Navigator.pop(context);
-    //           } else {
-    //             SmartDialog.showToast("Please fill in all fields.");
-    //           }
-    //         },
-    //         child: const Text("Add"),
-    //       ),
-    //     ],
-    //   ),
-    // );
   }
 
   void _showDeleteDialog(WidgetRef ref) {
