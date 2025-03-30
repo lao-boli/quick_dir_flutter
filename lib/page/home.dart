@@ -269,14 +269,14 @@ class MainScreen extends HookConsumerWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text("Add New Group"),
+              title: const Text("添加组"),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // 集合选择下拉框
                   DropdownButtonFormField<String?>(
                     value: selectedCollectionId,
-                    hint: const Text("Select Collection"),
+                    hint: const Text("选择集合"),
                     items: collections.map((collection) {
                       return DropdownMenuItem(
                         value: collection.id,
@@ -295,8 +295,8 @@ class MainScreen extends HookConsumerWidget {
                   TextField(
                     controller: groupNameController,
                     decoration: const InputDecoration(
-                      labelText: "Group Name",
-                      hintText: "Enter group name",
+                      labelText: "组名",
+                      hintText: "输入组名",
                     ),
                   ),
                 ],
@@ -304,7 +304,7 @@ class MainScreen extends HookConsumerWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancel"),
+                  child: const Text("取消"),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -312,7 +312,7 @@ class MainScreen extends HookConsumerWidget {
                     if (selectedCollectionId == null ||
                         groupNameController.text.isEmpty) {
                       SmartDialog.showToast(
-                          "Please select a collection and enter a group name");
+                          "请输入有效的集合和组名");
                       return;
                     }
 
@@ -324,7 +324,7 @@ class MainScreen extends HookConsumerWidget {
 
                     Navigator.pop(context);
                   },
-                  child: const Text("Add"),
+                  child: const Text("添加"),
                 ),
               ],
             );
