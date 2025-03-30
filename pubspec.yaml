@@ -38,6 +38,7 @@ dependencies:
   flutter_smart_dialog: ^4.9.6 #各种弹窗 Toast\Dialog\Popup
   system_windows: ^0.3.2
   freezed_annotation: ^2.4.1
+  animated_tree_view: ^2.3.0
 
   flutter_riverpod:
   hooks_riverpod:

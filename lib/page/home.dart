@@ -1,5 +1,8 @@
 import 'dart:io';
 
+import 'package:animated_tree_view/node/indexed_node.dart';
+import 'package:animated_tree_view/tree_view/tree_node.dart';
+import 'package:animated_tree_view/tree_view/tree_view.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -113,26 +116,23 @@ class MainScreen extends HookConsumerWidget {
       ),
       body: filteredGroups.isEmpty
           ? const Center(child: Text("请先选择集合"))
-          : ListView.builder(
-              itemCount: filteredGroups.length,
-              itemBuilder: (context, index) {
-                final group = filteredGroups[index];
-                // 创建虚拟节点来保持原有树结构逻辑
-                final groupNode = PathNode(
-                  label: group.name,
-                  data: group,
-                  children: group.paths
-                      .map((path) => PathNode(
-                            label: path.name,
-                            path: path.path,
-                            data: path,
-                          ))
-                      .toList(),
-                );
-                return buildTreeNode(ref, context, groupNode);
-              },
-            ),
+          : const PathTree(),
     );
+  }
+
+  Widget buildTreeView(WidgetRef ref, BuildContext context, PathNode node) {
+    TreeView.indexed(
+        tree: IndexedTreeNode.root(),
+        builder: (context, node) {
+          // build your node item here
+          // return any widget that you need
+          return ListTile(
+            title: Text("Item ${node.level}-${node.key}"),
+            subtitle: Text('Level ${node.level}'),
+          );
+        });
+
+    return Container();
   }
 
   Widget buildTreeNode(WidgetRef ref, BuildContext context, PathNode node) {
@@ -267,79 +267,81 @@ class MainScreen extends HookConsumerWidget {
   }
 
   void _showAddGroupDialog(WidgetRef ref) {
-  final groupNameController = TextEditingController();
-  String? selectedCollectionId; // 用于存储选中的集合ID
+    final groupNameController = TextEditingController();
+    String? selectedCollectionId; // 用于存储选中的集合ID
 
-  showDialog(
-    context: ref.context,
-    builder: (context) {
-      final collections = ref.watch(pathConfigProvider);
+    showDialog(
+      context: ref.context,
+      builder: (context) {
+        final collections = ref.watch(pathConfigProvider);
 
-      return StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: const Text("Add New Group"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 集合选择下拉框
-                DropdownButtonFormField<String?>(
-                  value: selectedCollectionId,
-                  hint: const Text("Select Collection"),
-                  items: collections.map((collection) {
-                    return DropdownMenuItem(
-                      value: collection.id,
-                      child: Text(collection.name),
-                    );
-                  }).toList(),
-                  onChanged: (newCollectionId) {
-                    setState(() {
-                      selectedCollectionId = newCollectionId;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // 组名称输入
-                TextField(
-                  controller: groupNameController,
-                  decoration: const InputDecoration(
-                    labelText: "Group Name",
-                    hintText: "Enter group name",
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Add New Group"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 集合选择下拉框
+                  DropdownButtonFormField<String?>(
+                    value: selectedCollectionId,
+                    hint: const Text("Select Collection"),
+                    items: collections.map((collection) {
+                      return DropdownMenuItem(
+                        value: collection.id,
+                        child: Text(collection.name),
+                      );
+                    }).toList(),
+                    onChanged: (newCollectionId) {
+                      setState(() {
+                        selectedCollectionId = newCollectionId;
+                      });
+                    },
                   ),
+                  const SizedBox(height: 16),
+
+                  // 组名称输入
+                  TextField(
+                    controller: groupNameController,
+                    decoration: const InputDecoration(
+                      labelText: "Group Name",
+                      hintText: "Enter group name",
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // 验证输入有效性
+                    if (selectedCollectionId == null ||
+                        groupNameController.text.isEmpty) {
+                      SmartDialog.showToast(
+                          "Please select a collection and enter a group name");
+                      return;
+                    }
+
+                    // 调用添加组方法
+                    ref.read(pathConfigProvider.notifier).addGroup(
+                          selectedCollectionId!,
+                          groupNameController.text,
+                        );
+
+                    Navigator.pop(context);
+                  },
+                  child: const Text("Add"),
                 ),
               ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Cancel"),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  // 验证输入有效性
-                  if (selectedCollectionId == null || groupNameController.text.isEmpty) {
-                    SmartDialog.showToast("Please select a collection and enter a group name");
-                    return;
-                  }
-
-                  // 调用添加组方法
-                  ref.read(pathConfigProvider.notifier).addGroup(
-                    selectedCollectionId!,
-                    groupNameController.text,
-                  );
-
-                  Navigator.pop(context);
-                },
-                child: const Text("Add"),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-}
+            );
+          },
+        );
+      },
+    );
+  }
 
   void _showAddDialog(WidgetRef ref) {
     final nameController = TextEditingController();
@@ -476,37 +478,114 @@ class MainScreen extends HookConsumerWidget {
     );
   }
 
-  void _showDeleteDialog(WidgetRef ref) {
-    // String? selectedKey;
-    //
-    // showDialog(
-    //   context: ref.context,
-    //   builder: (context) => AlertDialog(
-    //     title: const Text("Delete Path"),
-    //     content: DropdownButtonFormField<String>(
-    //       items: ref
-    //           .read(filteredKeysProvider)
-    //           .map((key) => DropdownMenuItem(value: key, child: Text(key)))
-    //           .toList(),
-    //       onChanged: (v) => selectedKey = v,
-    //       decoration: const InputDecoration(labelText: "Select Path"),
-    //     ),
-    //     actions: [
-    //       TextButton(
-    //         onPressed: () => Navigator.pop(context),
-    //         child: const Text("Cancel"),
-    //       ),
-    //       ElevatedButton(
-    //         onPressed: () {
-    //           if (selectedKey != null) {
-    //             ref.read(pathConfigProvider.notifier).deletePath(selectedKey!);
-    //             Navigator.pop(context);
-    //           }
-    //         },
-    //         child: const Text("Delete"),
-    //       ),
-    //     ],
-    //   ),
-    // );
+  void _showDeleteDialog(WidgetRef ref) {}
+}
+
+class PathTree extends HookConsumerWidget {
+  const PathTree({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pathConfig = ref.watch(pathConfigProvider);
+    final root = TreeNode.root();
+    final nodes = pathConfig.expand((collection) => collection.groups).map((group) {
+      Log.i(group);
+        return TreeNode(
+          key: group.id,
+          data: group,
+        )..addAll(group.paths
+            .map((item) => TreeNode(
+                  key: item.id,
+                  data: item,
+                ))
+            .toList());
+      }).toList();
+    root.addAll(nodes);
+    // Log.i(root);
+
+
+    return TreeView.simple(
+      tree: root,
+      showRootNode: false,
+      expansionBehavior: ExpansionBehavior.collapseOthers,
+      builder: (context, node) {
+        // Log.i(node.childrenAsList);
+        if (node.data is PathGroup) {
+          return _GroupTile(
+            group: node.data as PathGroup,
+            node: node,
+            onDelete: () =>
+                ref.read(pathConfigProvider.notifier).deleteById(node.data.id),
+          );
+        }
+        if (node.data is PathItem) {
+          return _PathTile(
+            item: node.data as PathItem,
+            onDelete: () =>
+                ref.read(pathConfigProvider.notifier).deleteById(node.data.id),
+          );
+        }
+        //  return ListTile(
+        //   title: Text("Item ${node.level}-${node.key}"),
+        //   subtitle: Text('Level ${node.level}'),
+        // );
+        return const SizedBox.shrink();
+      },
+    );
+  }
+}
+
+class _GroupTile extends StatelessWidget {
+  final PathGroup group;
+  final TreeNode node;
+  final VoidCallback onDelete;
+
+  const _GroupTile({
+    required this.group,
+    required this.node,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.folder),
+      title: Text(group.name),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: onDelete,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PathTile extends StatelessWidget {
+  final PathItem item;
+  final VoidCallback onDelete;
+
+  const _PathTile({
+    required this.item,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.insert_drive_file),
+      title: Text(item.name),
+      subtitle: Text(item.path),
+      trailing: IconButton(
+        icon: const Icon(Icons.delete),
+        onPressed: onDelete,
+      ),
+      onTap: () {
+        // 处理路径项点击
+      },
+    );
   }
 }

@@ -20,34 +20,6 @@ class PathNode with _$PathNode {
   factory PathNode.fromJson(Map<String, dynamic> json) =>
       _$PathNodeFromJson(json);
 }
-// class PathNode {
-//   final String label;
-//   final String? path;
-//   final Object? data; // 原始数据引用
-//   final List<PathNode> children;
-//   bool isExpanded;
-//
-//   PathNode({
-//     required this.label,
-//     this.path,
-//     this.data,
-//     this.children = const [],
-//     this.isExpanded = false,
-//   });
-//
-//   PathNode copyWith({
-//     bool? isExpanded,
-//     List<PathNode>? children,
-//   }) {
-//     return PathNode(
-//       label: label,
-//       path: path,
-//       data: data,
-//       children: children ?? this.children,
-//       isExpanded: isExpanded ?? this.isExpanded,
-//     );
-//   }
-// }
 
 // 树形结构管理
 @riverpod
@@ -101,45 +73,6 @@ class PathTree extends _$PathTree {
     return groupNodes.isNotEmpty ? collectionNode : null;
   }).whereType<PathNode>().toList();
 }
-
-  List<PathNode> _buildTree2(List<PathCollection> collections, String query) {
-    return collections.map((collection) {
-      final collectionKey = 'collection_${collection.name}';
-
-      // 创建集合节点
-      var collectionNode = PathNode(
-        label: collection.name,
-        data: collection,
-        isExpanded: _expandedNodes.contains(collectionKey),
-      );
-
-      // 处理子节点
-      collectionNode.children.addAll(collection.groups.map((group) {
-        final groupKey = '${collectionKey}_group_${group.name}';
-
-        // 创建组节点
-        var groupNode = PathNode(
-          label: group.name,
-          data: group,
-          isExpanded: _expandedNodes.contains(groupKey),
-        );
-
-        // 添加路径节点
-        groupNode.children.addAll(group.paths.map((path) {
-          return PathNode(
-            label: path.name,
-            path: path.path,
-            data: path,
-          );
-        }));
-
-        // 应用搜索过滤
-        return _matchesSearch(groupNode, query) ? groupNode : null;
-      }).whereType<PathNode>());
-
-      return collectionNode.children.isNotEmpty ? collectionNode : null;
-    }).whereType<PathNode>().toList();
-  }
 
   bool _matchesSearch(PathNode node, String query) {
     if (query.isEmpty) return true;
