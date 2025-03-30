@@ -11,6 +11,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:path/path.dart' as Path;
 import 'package:quick_dir_flutter/store/file.dart';
 import 'package:quick_dir_flutter/util/log.dart';
+import 'package:quick_dir_flutter/util/path.dart';
 import 'package:system_windows/system_windows.dart';
 
 import '../store/tree.dart';
@@ -519,16 +520,14 @@ class PathTree extends HookConsumerWidget {
           );
         }
         if (node.data is PathItem) {
+          final item = node.data as PathItem;
           return _PathTile(
             item: node.data as PathItem,
+            onTap:() => openPath(item.path),
             onDelete: () =>
                 ref.read(pathConfigProvider.notifier).deleteById(node.data.id),
           );
         }
-        //  return ListTile(
-        //   title: Text("Item ${node.level}-${node.key}"),
-        //   subtitle: Text('Level ${node.level}'),
-        // );
         return const SizedBox.shrink();
       },
     );
@@ -549,7 +548,7 @@ class _GroupTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: const Icon(Icons.folder),
+      leading: const Icon(Icons.group),
       title: Text(group.name),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -567,25 +566,25 @@ class _GroupTile extends StatelessWidget {
 class _PathTile extends StatelessWidget {
   final PathItem item;
   final VoidCallback onDelete;
+  final VoidCallback onTap;
 
   const _PathTile({
     required this.item,
     required this.onDelete,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: const Icon(Icons.insert_drive_file),
+      leading: const Icon(Icons.folder),
       title: Text(item.name),
       subtitle: Text(item.path),
       trailing: IconButton(
         icon: const Icon(Icons.delete),
         onPressed: onDelete,
       ),
-      onTap: () {
-        // 处理路径项点击
-      },
+      onTap: onTap,
     );
   }
 }
