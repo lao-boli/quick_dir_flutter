@@ -117,6 +117,9 @@ class PathConfig extends _$PathConfig {
     }));
   }
 
+  getCollectionById(String collectionId) {
+    return state.firstWhere((collection) => collection.id == collectionId);
+  }
   // 添加集合
   void addCollection(String name) {
     state = [...state, PathCollection(id: IdGenerator.generate(), name: name)];
@@ -145,20 +148,6 @@ class PathConfig extends _$PathConfig {
     }).toList();
     _save();
   }
-
-  // 添加组到集合
-  // void addGroup(int collectionIndex, String groupName) {
-  //   final updated = state[collectionIndex].groups.toList();
-  //   updated.add(PathGroup(name: groupName));
-  //   state = [
-  //     for (int i = 0; i < state.length; i++)
-  //       if (i == collectionIndex)
-  //         state[i].copyWith(groups: updated)
-  //       else
-  //         state[i]
-  //   ];
-  //   _save();
-  // }
 
   void addPath({
     required String collectionId,
@@ -189,35 +178,6 @@ class PathConfig extends _$PathConfig {
     }).toList();
     _save();
   }
-
-  // // 添加路径到指定集合的组
-  // void addPath({
-  //   required int collectionIndex,
-  //   required int groupIndex,
-  //   required String name,
-  //   required String path,
-  // }) {
-  //   final collection = state[collectionIndex];
-  //   final group = collection.groups[groupIndex];
-  //   final updatedPaths = group.paths.toList()
-  //     ..add(PathItem(name: name, path: path));
-  //
-  //   state = [
-  //     for (int i = 0; i < state.length; i++)
-  //       if (i == collectionIndex)
-  //         collection.copyWith(groups: [
-  //           for (int j = 0; j < collection.groups.length; j++)
-  //             if (j == groupIndex)
-  //               group.copyWith(paths: updatedPaths)
-  //             else
-  //               collection.groups[j]
-  //         ])
-  //       else
-  //         state[i]
-  //   ];
-  //   _save();
-  // }
-
   // 通用删除方法
   void deleteById(String targetId) {
     state = state
@@ -311,57 +271,4 @@ List<String> searchResults(SearchResultsRef ref) {
   }
 
   return results;
-  // final query = ref.watch(searchQueryProvider).toLowerCase();
-  // final collections = ref.watch(pathConfigProvider);
-  //
-  // final results = <String>[];
-  //
-  // for (final collection in collections) {
-  //   // 匹配集合名称
-  //   if (collection.name.toLowerCase().contains(query)) {
-  //     results.add('Collection: ${collection.name}');
-  //   }
-  //
-  //   for (final group in collection.groups) {
-  //     // 匹配组名称
-  //     if (group.name.toLowerCase().contains(query)) {
-  //       results.add('Group: ${collection.name} > ${group.name}');
-  //     }
-  //
-  //     for (final path in group.paths) {
-  //       // 匹配路径名称
-  //       if (path.name.toLowerCase().contains(query)) {
-  //         results
-  //             .add('Path: ${collection.name} > ${group.name} > ${path.name}');
-  //       }
-  //     }
-  //   }
-  // }
-  //
-  // return results;
 }
-
-// // 为数据类添加CopyWith方法
-// extension PathCollectionCopyWith on PathCollection {
-//   PathCollection copyWith({
-//     String? name,
-//     List<PathGroup>? groups,
-//   }) {
-//     return PathCollection(
-//       name: name ?? this.name,
-//       groups: groups ?? this.groups,
-//     );
-//   }
-// }
-//
-// extension PathGroupCopyWith on PathGroup {
-//   PathGroup copyWith({
-//     String? name,
-//     List<PathItem>? paths,
-//   }) {
-//     return PathGroup(
-//       name: name ?? this.name,
-//       paths: paths ?? this.paths,
-//     );
-//   }
-// }

@@ -12,10 +12,13 @@ import 'package:system_windows/system_windows.dart';
 
 import '../store/tree.dart';
 
+final mainSelectedCollectionIdProvider = StateProvider<String?>((ref) => null);
 final selectedCollectionIdProvider = StateProvider<String?>((ref) => null);
 final selectedGroupIdProvider = StateProvider<String?>((ref) => null);
 final selectedCollectionProvider =
     StateProvider<PathCollection?>((ref) => null);
+// final selectedCollectionIdProvider =
+// StateProvider<String?>((ref) => null);
 
 class MainScreen extends HookConsumerWidget {
   const MainScreen({super.key});
@@ -23,8 +26,10 @@ class MainScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final searchController = useTextEditingController();
+    final paths = ref.watch(pathConfigProvider);
     final nodes = ref.watch(pathTreeProvider);
     final selectedCollection = ref.watch(selectedCollectionProvider);
+    final selectedCollectionId = ref.watch(mainSelectedCollectionIdProvider);
     final filteredGroups = selectedCollection?.groups ?? [];
     ref.listen<List<PathCollection>>(pathConfigProvider, (_, collections) {
       if (collections.isNotEmpty &&
@@ -44,12 +49,12 @@ class MainScreen extends HookConsumerWidget {
             // 集合选择下拉框
             Flexible(
               child: DropdownButtonHideUnderline(
-                child: DropdownButton<PathCollection>(
-                  value: ref.watch(selectedCollectionProvider),
+                child: DropdownButton<String>(
+                  value: ref.watch(selectedCollectionIdProvider),
                   hint: const Text('选择集合', style: TextStyle()),
                   items: ref.watch(pathConfigProvider).map((collection) {
                     return DropdownMenuItem(
-                      value: collection,
+                      value: collection.id,
                       child: Text(
                         collection.name,
                         style: const TextStyle(),
@@ -57,7 +62,7 @@ class MainScreen extends HookConsumerWidget {
                     );
                   }).toList(),
                   onChanged: (collection) {
-                    ref.read(selectedCollectionProvider.notifier).state =
+                    ref.read(selectedCollectionIdProvider.notifier).state =
                         collection;
                   },
                 ),
@@ -92,6 +97,10 @@ class MainScreen extends HookConsumerWidget {
         //       ref.read(searchQueryProvider.notifier).updateQuery(value),
         // ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.group_add),
+            onPressed: () => _showAddGroupDialog(ref),
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => _showAddDialog(ref),
@@ -256,6 +265,81 @@ class MainScreen extends HookConsumerWidget {
     }
     return false;
   }
+
+  void _showAddGroupDialog(WidgetRef ref) {
+  final groupNameController = TextEditingController();
+  String? selectedCollectionId; // 用于存储选中的集合ID
+
+  showDialog(
+    context: ref.context,
+    builder: (context) {
+      final collections = ref.watch(pathConfigProvider);
+
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text("Add New Group"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 集合选择下拉框
+                DropdownButtonFormField<String?>(
+                  value: selectedCollectionId,
+                  hint: const Text("Select Collection"),
+                  items: collections.map((collection) {
+                    return DropdownMenuItem(
+                      value: collection.id,
+                      child: Text(collection.name),
+                    );
+                  }).toList(),
+                  onChanged: (newCollectionId) {
+                    setState(() {
+                      selectedCollectionId = newCollectionId;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // 组名称输入
+                TextField(
+                  controller: groupNameController,
+                  decoration: const InputDecoration(
+                    labelText: "Group Name",
+                    hintText: "Enter group name",
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  // 验证输入有效性
+                  if (selectedCollectionId == null || groupNameController.text.isEmpty) {
+                    SmartDialog.showToast("Please select a collection and enter a group name");
+                    return;
+                  }
+
+                  // 调用添加组方法
+                  ref.read(pathConfigProvider.notifier).addGroup(
+                    selectedCollectionId!,
+                    groupNameController.text,
+                  );
+
+                  Navigator.pop(context);
+                },
+                child: const Text("Add"),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   void _showAddDialog(WidgetRef ref) {
     final nameController = TextEditingController();
