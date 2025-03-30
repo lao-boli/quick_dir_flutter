@@ -31,17 +31,15 @@ class MainScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final searchController = useTextEditingController();
     final paths = ref.watch(pathConfigProvider);
-    final nodes = ref.watch(pathTreeProvider);
-    final selectedCollection = ref.watch(selectedCollectionProvider);
-    final selectedCollectionId = ref.watch(mainSelectedCollectionIdProvider);
-    final filteredGroups = selectedCollection?.groups ?? [];
+    final currentCollection = ref.watch(currentCollectionProvider);
+    final filteredGroups = currentCollection?.groups ?? [];
     ref.listen<List<PathCollection>>(pathConfigProvider, (_, collections) {
-      if (collections.isNotEmpty &&
-          ref.read(selectedCollectionProvider) == null) {
+      if (collections.isNotEmpty && currentCollection == null) {
         // 使用postFrameCallback避免build过程中修改状态
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          ref.read(selectedCollectionProvider.notifier).state =
-              collections.first;
+          ref
+              .read(currentCollectionProvider.notifier)
+              .setCurrentCollection(collections.first);
         });
       }
     });
@@ -54,7 +52,7 @@ class MainScreen extends HookConsumerWidget {
             Flexible(
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
-                  value: ref.watch(selectedCollectionIdProvider),
+                  value: currentCollection?.id,
                   hint: const Text('选择集合', style: TextStyle()),
                   items: ref.watch(pathConfigProvider).map((collection) {
                     return DropdownMenuItem(
@@ -66,8 +64,9 @@ class MainScreen extends HookConsumerWidget {
                     );
                   }).toList(),
                   onChanged: (collection) {
-                    ref.read(selectedCollectionIdProvider.notifier).state =
-                        collection;
+                    ref
+                        .read(currentCollectionProvider.notifier)
+                        .setCurrentCollectionById(collection!);
                   },
                 ),
               ),
@@ -91,15 +90,6 @@ class MainScreen extends HookConsumerWidget {
             ),
           ],
         ),
-        // title: TextField(
-        //   controller: searchController,
-        //   decoration: const InputDecoration(
-        //     hintText: "Search...",
-        //     border: InputBorder.none,
-        //   ),
-        //   onChanged: (value) =>
-        //       ref.read(searchQueryProvider.notifier).updateQuery(value),
-        // ),
         actions: [
           IconButton(
             icon: const Icon(Icons.group_add),
@@ -489,21 +479,21 @@ class PathTree extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pathConfig = ref.watch(pathConfigProvider);
     final root = TreeNode.root();
-    final nodes = pathConfig.expand((collection) => collection.groups).map((group) {
+    final nodes =
+        pathConfig.expand((collection) => collection.groups).map((group) {
       Log.i(group);
-        return TreeNode(
-          key: group.id,
-          data: group,
-        )..addAll(group.paths
-            .map((item) => TreeNode(
-                  key: item.id,
-                  data: item,
-                ))
-            .toList());
-      }).toList();
+      return TreeNode(
+        key: group.id,
+        data: group,
+      )..addAll(group.paths
+          .map((item) => TreeNode(
+                key: item.id,
+                data: item,
+              ))
+          .toList());
+    }).toList();
     root.addAll(nodes);
     // Log.i(root);
-
 
     return TreeView.simple(
       tree: root,
@@ -523,7 +513,7 @@ class PathTree extends HookConsumerWidget {
           final item = node.data as PathItem;
           return _PathTile(
             item: node.data as PathItem,
-            onTap:() => openPath(item.path),
+            onTap: () => openPath(item.path),
             onDelete: () =>
                 ref.read(pathConfigProvider.notifier).deleteById(node.data.id),
           );

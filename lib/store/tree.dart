@@ -7,6 +7,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'tree.g.dart';
 part 'tree.freezed.dart';
 
+
+
+
 @unfreezed
 class PathNode with _$PathNode {
   factory PathNode({

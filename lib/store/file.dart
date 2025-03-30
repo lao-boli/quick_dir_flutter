@@ -59,6 +59,23 @@ class PathCollection with _$PathCollection {
       _$PathCollectionFromJson(json);
 }
 
+
+@riverpod
+class CurrentCollection extends _$CurrentCollection {
+  @override
+  PathCollection? build() {
+    return  null;
+  }
+
+  void setCurrentCollection(PathCollection collection) {
+    state = collection;
+  }
+  void setCurrentCollectionById(String collectionId) {
+    final collection = ref.read(pathConfigProvider.notifier).getCollectionById(collectionId);
+    state = collection;
+  }
+}
+
 @riverpod
 class PathConfig extends _$PathConfig {
   @override

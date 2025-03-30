@@ -31,7 +31,7 @@ Map<String, dynamic> _$$PathNodeImplToJson(_$PathNodeImpl instance) =>
 // RiverpodGenerator
 // **************************************************************************
 
-String _$pathTreeHash() => r'f39cd17df2f1d60902568abf78068e7b6e3cbb7f';
+String _$pathTreeHash() => r'37ee1906c5ce9cf3545eb0fd40f6da49a124c2dd';
 
 /// See also [PathTree].
 @ProviderFor(PathTree)

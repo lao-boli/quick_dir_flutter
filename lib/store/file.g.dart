@@ -65,7 +65,7 @@ Map<String, dynamic> _$$PathCollectionImplToJson(
 // RiverpodGenerator
 // **************************************************************************
 
-String _$searchResultsHash() => r'd1f355457e865839be3c38884b8596300b27c8b0';
+String _$searchResultsHash() => r'45ca50caa39a0eddaed3eb74e60bc3d1177a5655';
 
 /// See also [searchResults].
 @ProviderFor(searchResults)
@@ -80,7 +80,23 @@ final searchResultsProvider = AutoDisposeProvider<List<String>>.internal(
 );
 
 typedef SearchResultsRef = AutoDisposeProviderRef<List<String>>;
-String _$pathConfigHash() => r'a8cd5c14373fe83b7c235c96fb8234e32ed433e0';
+String _$currentCollectionHash() => r'f9c7543506f9499ee3f1814c5d7b1c2c908764c6';
+
+/// See also [CurrentCollection].
+@ProviderFor(CurrentCollection)
+final currentCollectionProvider =
+    AutoDisposeNotifierProvider<CurrentCollection, PathCollection?>.internal(
+  CurrentCollection.new,
+  name: r'currentCollectionProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$currentCollectionHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$CurrentCollection = AutoDisposeNotifier<PathCollection?>;
+String _$pathConfigHash() => r'9402af1335f5549f813f7dd9f514cd57a69da594';
 
 /// See also [PathConfig].
 @ProviderFor(PathConfig)
