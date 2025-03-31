@@ -59,19 +59,20 @@ class PathCollection with _$PathCollection {
       _$PathCollectionFromJson(json);
 }
 
-
 @riverpod
 class CurrentCollection extends _$CurrentCollection {
   @override
   PathCollection? build() {
-    return  null;
+    return null;
   }
 
   void setCurrentCollection(PathCollection collection) {
     state = collection;
   }
+
   void setCurrentCollectionById(String collectionId) {
-    final collection = ref.read(pathConfigProvider.notifier).getCollectionById(collectionId);
+    final collection =
+        ref.read(pathConfigProvider.notifier).getCollectionById(collectionId);
     state = collection;
   }
 }
@@ -136,8 +137,10 @@ class PathConfig extends _$PathConfig {
   }
 
   getCollectionById(String collectionId) {
+    Log.i(collectionId);
     return state.firstWhere((collection) => collection.id == collectionId);
   }
+
   // 添加集合
   void addCollection(String name) {
     state = [...state, PathCollection(id: IdGenerator.generate(), name: name)];
@@ -165,6 +168,11 @@ class PathConfig extends _$PathConfig {
       return collection;
     }).toList();
     _save();
+    // final currentCollection = state.firstWhere((element) => element.id == )
+    ref
+        .read(currentCollectionProvider.notifier)
+        .setCurrentCollectionById(collectionId);
+    Log.i(state);
   }
 
   void addPath({
@@ -194,8 +202,12 @@ class PathConfig extends _$PathConfig {
       }
       return collection;
     }).toList();
+    ref
+        .read(currentCollectionProvider.notifier)
+        .setCurrentCollectionById(collectionId);
     _save();
   }
+
   // 通用删除方法
   void deleteById(String targetId) {
     state = state
@@ -210,6 +222,11 @@ class PathConfig extends _$PathConfig {
                 .toList()))
         .toList();
     _save();
+    final currentCollection = state.firstWhere(
+        (element) => element.id == ref.read(currentCollectionProvider)?.id);
+    ref
+        .read(currentCollectionProvider.notifier)
+        .setCurrentCollection(currentCollection);
   }
 
 // 或更精确的定位删除：
@@ -222,31 +239,11 @@ class PathConfig extends _$PathConfig {
       }).toList());
     }).toList();
     _save();
-  }
-
-  // 删除路径
-  void deletePath({
-    required int collectionIndex,
-    required int groupIndex,
-    required int pathIndex,
-  }) {
-    final collection = state[collectionIndex];
-    final group = collection.groups[groupIndex];
-
-    state = [
-      for (int i = 0; i < state.length; i++)
-        if (i == collectionIndex)
-          collection.copyWith(groups: [
-            for (int j = 0; j < collection.groups.length; j++)
-              if (j == groupIndex)
-                group.copyWith(paths: [...group.paths]..removeAt(pathIndex))
-              else
-                collection.groups[j]
-          ])
-        else
-          state[i]
-    ];
-    _save();
+    final currentCollection = state.firstWhere(
+        (element) => element.id == ref.read(currentCollectionProvider)?.id);
+    ref
+        .read(currentCollectionProvider.notifier)
+        .setCurrentCollection(currentCollection);
   }
 }
 

@@ -10,6 +10,7 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:path/path.dart' as Path;
 import 'package:quick_dir_flutter/store/file.dart';
+import 'package:quick_dir_flutter/util/icon_util.dart';
 import 'package:quick_dir_flutter/util/log.dart';
 import 'package:quick_dir_flutter/util/path.dart';
 import 'package:system_windows/system_windows.dart';
@@ -92,6 +93,10 @@ class MainScreen extends HookConsumerWidget {
         ),
         actions: [
           IconButton(
+            icon: getIcon('collection'),
+            onPressed: () => _showAddCollectionDialog(ref),
+          ),
+          IconButton(
             icon: const Icon(Icons.group_add),
             onPressed: () => _showAddGroupDialog(ref),
           ),
@@ -99,14 +104,10 @@ class MainScreen extends HookConsumerWidget {
             icon: const Icon(Icons.add),
             onPressed: () => _showAddDialog(ref),
           ),
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () => _showDeleteDialog(ref),
-          ),
         ],
       ),
       body: filteredGroups.isEmpty
-          ? const Center(child: Text("请先选择集合"))
+          ? const Center(child: Text("暂无组"))
           : const PathTree(),
     );
   }
@@ -145,7 +146,6 @@ class MainScreen extends HookConsumerWidget {
   }
 
   Widget buildPathItemTile(WidgetRef ref, BuildContext context, PathNode node) {
-    Log.i(node);
     void handleTap() {
       if (node.path != null) {
         // 处理路径打开逻辑
@@ -219,7 +219,6 @@ class MainScreen extends HookConsumerWidget {
   //
   void _openPath(WidgetRef ref, String key) async {
     final path = key;
-    Log.i(path);
     if (path == null) return;
     var systemWindows = SystemWindows();
 
@@ -258,16 +257,17 @@ class MainScreen extends HookConsumerWidget {
   }
 
   void _showAddGroupDialog(WidgetRef ref) {
-    final groupNameController = TextEditingController();
-    String? selectedCollectionId; // 用于存储选中的集合ID
-
     showDialog(
       context: ref.context,
       builder: (context) {
-        final collections = ref.watch(pathConfigProvider);
+        return HookConsumer(
+          builder: (context, ref, _) {
+            final collections = ref.watch(pathConfigProvider);
+            final currentCollection = ref.watch(currentCollectionProvider);
+            final groupNameController = useTextEditingController();
+            var selectedCollectionId =
+                useState<String?>(currentCollection?.id); // 用于存储选中的集合ID
 
-        return StatefulBuilder(
-          builder: (context, setState) {
             return AlertDialog(
               title: const Text("添加组"),
               content: Column(
@@ -275,7 +275,7 @@ class MainScreen extends HookConsumerWidget {
                 children: [
                   // 集合选择下拉框
                   DropdownButtonFormField<String?>(
-                    value: selectedCollectionId,
+                    value: selectedCollectionId.value,
                     hint: const Text("选择集合"),
                     items: collections.map((collection) {
                       return DropdownMenuItem(
@@ -284,9 +284,7 @@ class MainScreen extends HookConsumerWidget {
                       );
                     }).toList(),
                     onChanged: (newCollectionId) {
-                      setState(() {
-                        selectedCollectionId = newCollectionId;
-                      });
+                      selectedCollectionId.value = newCollectionId;
                     },
                   ),
                   const SizedBox(height: 16),
@@ -309,22 +307,78 @@ class MainScreen extends HookConsumerWidget {
                 ElevatedButton(
                   onPressed: () {
                     // 验证输入有效性
-                    if (selectedCollectionId == null ||
+                    if (selectedCollectionId.value == null ||
+                        selectedCollectionId.value == '' ||
                         groupNameController.text.isEmpty) {
-                      SmartDialog.showToast(
-                          "请输入有效的集合和组名");
+                      SmartDialog.showToast("请输入有效的集合和组名");
                       return;
                     }
 
                     // 调用添加组方法
                     ref.read(pathConfigProvider.notifier).addGroup(
-                          selectedCollectionId!,
+                          selectedCollectionId.value!,
                           groupNameController.text,
                         );
 
                     Navigator.pop(context);
                   },
                   child: const Text("添加"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showAddCollectionDialog(WidgetRef ref) {
+    showDialog(
+      context: ref.context,
+      builder: (context) {
+        return HookConsumer(
+          builder: (context, ref, _) {
+            final collectionNameController = useTextEditingController();
+
+            return AlertDialog(
+              title: const Text("添加集合"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: collectionNameController,
+                    decoration: const InputDecoration(
+                      labelText: "集合名称",
+                      hintText: "输入集合名称",
+                      border: OutlineInputBorder(),
+                    ),
+                    autofocus: true,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("取消"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // 验证输入有效性
+                    if (collectionNameController.text.isEmpty) {
+                      SmartDialog.showToast("集合名称不能为空");
+                      return;
+                    }
+
+                    // 调用添加集合方法
+                    ref.read(pathConfigProvider.notifier).addCollection(
+                          collectionNameController.text,
+                        );
+
+                    // 关闭对话框并清空输入
+                    collectionNameController.clear();
+                    Navigator.pop(context);
+                  },
+                  child: const Text("确认添加"),
                 ),
               ],
             );
@@ -380,9 +434,7 @@ class MainScreen extends HookConsumerWidget {
                     items: collections
                         .firstWhere(
                           (c) {
-                            Log.i(c.id);
                             var watch = ref.watch(selectedCollectionIdProvider);
-                            Log.i(watch);
                             return c.id == watch;
                           },
                           orElse: () => PathCollection(id: '', name: ''),
@@ -478,21 +530,23 @@ class PathTree extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pathConfig = ref.watch(pathConfigProvider);
+    Log.w('rebuild');
+    final currentCollection = ref.watch(currentCollectionProvider);
     final root = TreeNode.root();
-    final nodes =
-        pathConfig.expand((collection) => collection.groups).map((group) {
+    final nodes = currentCollection?.groups.map((group) {
       Log.i(group);
       return TreeNode(
         key: group.id,
         data: group,
-      )..addAll(group.paths
-          .map((item) => TreeNode(
-                key: item.id,
-                data: item,
-              ))
-          .toList());
+      )..addAll(
+          group.paths
+              .map(
+                (item) => TreeNode(key: item.id, data: item),
+              )
+              .toList(),
+        );
     }).toList();
-    root.addAll(nodes);
+    root.addAll(nodes ?? []);
     // Log.i(root);
 
     return TreeView.simple(
