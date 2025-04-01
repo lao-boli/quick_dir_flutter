@@ -50,6 +50,12 @@ class MainScreen extends HookConsumerWidget {
         title: Row(
           children: [
             // 集合选择下拉框
+            IconButton(
+              icon: const Icon(Icons.more_horiz),
+              onPressed: (){
+                _showUpdateCollectionDialog(ref, currentCollection!);
+              },
+            ),
             Flexible(
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
@@ -388,6 +394,64 @@ class MainScreen extends HookConsumerWidget {
     );
   }
 
+  void _showUpdateCollectionDialog(WidgetRef ref,PathCollection collection) {
+    showDialog(
+      context: ref.context,
+      builder: (context) {
+        return HookConsumer(
+          builder: (context, ref, _) {
+            final collectionNameController = useTextEditingController();
+            collectionNameController.text = collection.name;
+
+            return AlertDialog(
+              title: const Text("修改集合"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: collectionNameController,
+                    decoration: const InputDecoration(
+                      labelText: "集合名称",
+                      hintText: "输入集合名称",
+                      border: OutlineInputBorder(),
+                    ),
+                    autofocus: true,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("取消"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // 验证输入有效性
+                    if (collectionNameController.text.isEmpty) {
+                      SmartDialog.showToast("集合名称不能为空");
+                      return;
+                    }
+
+                    // 调用添加集合方法
+                    ref.read(pathConfigProvider.notifier).updateCollection(
+                      collection.id,
+                      collectionNameController.text,
+                    );
+
+                    // 关闭对话框并清空输入
+                    collectionNameController.clear();
+                    Navigator.pop(context);
+                  },
+                  child: const Text("确认修改"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showAddDialog(WidgetRef ref) {
     showDialog(
       context: ref.context,
@@ -558,6 +622,9 @@ class PathTree extends HookConsumerWidget {
           return _PathTile(
             item: node.data as PathItem,
             onTap: () => openPath(item.path),
+            onMore: () {
+              _showUpdateUpdateDialog(ref, item);
+            },
             onDelete: () =>
                 ref.read(pathConfigProvider.notifier).deleteById(node.data.id),
           );
@@ -626,6 +693,128 @@ class PathTree extends HookConsumerWidget {
       },
     );
   }
+
+  void _showUpdateUpdateDialog(WidgetRef ref, PathItem item) {
+    showDialog(
+      context: ref.context,
+      builder: (context) => HookConsumer(
+        builder: (context, ref, child) {
+          // 文本控制器
+          final nameController = useTextEditingController();
+          nameController.text = item.name;
+          final pathController = useTextEditingController();
+          pathController.text = item.path;
+
+          // 局部状态管理
+          final selectedCollectionId = useState<String?>(null);
+          final selectedGroupId = useState<String?>(null);
+
+          // 获取集合数据（假设pathConfigProvider是全局状态）
+          final collections = ref.watch(pathConfigProvider);
+
+          return AlertDialog(
+            title: const Text("修改路径"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // // 集合选择下拉框
+                // DropdownButtonFormField<String?>(
+                //   value: selectedCollectionId.value,
+                //   hint: const Text("选择集合"),
+                //   items: collections.map((collection) {
+                //     return DropdownMenuItem(
+                //       value: collection.id,
+                //       child: Text(collection.name),
+                //     );
+                //   }).toList(),
+                //   onChanged: (collectionId) {
+                //     selectedCollectionId.value = collectionId;
+                //     selectedGroupId.value = null; // 重置组选择
+                //   },
+                // ),
+                // const SizedBox(height: 16),
+                // // 组选择下拉框
+                // DropdownButtonFormField<String?>(
+                //   value: selectedGroupId.value,
+                //   hint: const Text("选择组"),
+                //   items: collections
+                //       .firstWhere(
+                //         (c) => c.id == selectedCollectionId.value,
+                //     orElse: () =>
+                //         PathCollection(id: '', name: '', groups: []),
+                //   )
+                //       .groups
+                //       .map((group) => DropdownMenuItem(
+                //     value: group.id,
+                //     child: Text(group.name),
+                //   ))
+                //       .toList(),
+                //   onChanged: selectedCollectionId.value != null
+                //       ? (groupId) => selectedGroupId.value = groupId
+                //       : null,
+                // ),
+                // const SizedBox(height: 16),
+
+                // 路径名称输入
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: "路径名称"),
+                ),
+                const SizedBox(height: 16),
+
+                // 路径选择
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: pathController,
+                        decoration: const InputDecoration(labelText: "路径"),
+                        readOnly: true,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.folder_open),
+                      onPressed: () async {
+                        final dir =
+                        await FilePicker.platform.getDirectoryPath();
+                        if (dir != null) pathController.text = dir;
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("取消"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (nameController.text.isEmpty ||
+                      pathController.text.isEmpty
+                     ) {
+                    SmartDialog.showToast("请填写完整信息");
+                    return;
+                  }
+
+                  ref.read(pathConfigProvider.notifier).updatePath(
+                    collectionId: item.collectionId,
+                    groupId: item.groupId,
+                    pathId: item.id,
+                    name: nameController.text,
+                    path: pathController.text,
+                  );
+                  Navigator.pop(context);
+                },
+                child: const Text("修改"),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 }
 
 class _GroupTile extends StatelessWidget {
@@ -667,11 +856,13 @@ class _PathTile extends StatelessWidget {
   final PathItem item;
   final VoidCallback onDelete;
   final VoidCallback onTap;
+  final VoidCallback onMore;
 
   const _PathTile({
     required this.item,
     required this.onDelete,
     required this.onTap,
+    required this.onMore,
   });
 
   @override
@@ -680,9 +871,18 @@ class _PathTile extends StatelessWidget {
       leading: const Icon(Icons.folder),
       title: Text(item.name),
       subtitle: Text(item.path),
-      trailing: IconButton(
-        icon: const Icon(Icons.delete),
-        onPressed: onDelete,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.more_horiz),
+            onPressed: onMore,
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: onDelete,
+          ),
+        ],
       ),
       onTap: onTap,
     );

@@ -146,6 +146,17 @@ class PathConfig extends _$PathConfig {
     state = [...state, PathCollection(id: IdGenerator.generate(), name: name)];
     _save();
   }
+  void updateCollection(String collectionId,String name) {
+
+    state = state.map((collection) {
+      if (collection.id == collectionId) {
+        return collection.copyWith(name: name);
+      }
+      return collection;
+    }).toList();
+
+    _save();
+  }
 
   // 删除集合
   void deleteCollection(int collectionIndex) {
@@ -240,6 +251,37 @@ class PathConfig extends _$PathConfig {
                 path: path,
               )
             ]);
+          }
+          return group;
+        }).toList());
+      }
+      return collection;
+    }).toList();
+    ref
+        .read(currentCollectionProvider.notifier)
+        .setCurrentCollectionById(collectionId);
+    _save();
+  }
+
+  void updatePath({
+    required String collectionId,
+    required String groupId,
+    required String pathId,
+    required String name,
+    required String path,
+  }) {
+    state = state.map((collection) {
+      if (collection.id == collectionId) {
+        return collection.copyWith(
+            groups: collection.groups.map((group) {
+          if (group.id == groupId) {
+            return group.copyWith(
+                paths: group.paths.map((e) {
+              if (e.id == pathId) {
+                return e.copyWith(name: name, path: path);
+              }
+              return e;
+            }).toList());
           }
           return group;
         }).toList());
