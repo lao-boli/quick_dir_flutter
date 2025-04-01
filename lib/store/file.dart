@@ -172,7 +172,51 @@ class PathConfig extends _$PathConfig {
     ref
         .read(currentCollectionProvider.notifier)
         .setCurrentCollectionById(collectionId);
-    Log.i(state);
+  }
+
+  void updateGroupName(String collectionId, String groupId, String newName) {
+    state = state.map((collection) {
+      if (collection.id == collectionId) {
+        return collection.copyWith(
+            groups: collection.groups.map((group) {
+          if (group.id == groupId) {
+            return group.copyWith(name: newName);
+          }
+          return group;
+        }).toList());
+      }
+      return collection;
+    }).toList();
+    _save();
+    ref
+        .read(currentCollectionProvider.notifier)
+        .setCurrentCollectionById(collectionId);
+  }
+
+  void updatePathName(
+      String collectionId, String groupId, String pathId, String newName) {
+    state = state.map((collection) {
+      if (collection.id == collectionId) {
+        return collection.copyWith(
+            groups: collection.groups.map((group) {
+          if (group.id == groupId) {
+            return group.copyWith(
+                paths: group.paths.map((e) {
+              if (e.id == pathId) {
+                return e.copyWith(name: newName);
+              }
+              return e;
+            }).toList());
+          }
+          return group;
+        }).toList());
+      }
+      return collection;
+    }).toList();
+    _save();
+    ref
+        .read(currentCollectionProvider.notifier)
+        .setCurrentCollectionById(collectionId);
   }
 
   void addPath({

@@ -556,9 +556,13 @@ class PathTree extends HookConsumerWidget {
       builder: (context, node) {
         // Log.i(node.childrenAsList);
         if (node.data is PathGroup) {
+          final group = node.data as PathGroup;
           return _GroupTile(
             group: node.data as PathGroup,
             node: node,
+            onMore: () {
+              _showUpdateGroupDialog(ref, group);
+            },
             onDelete: () =>
                 ref.read(pathConfigProvider.notifier).deleteById(node.data.id),
           );
@@ -576,17 +580,79 @@ class PathTree extends HookConsumerWidget {
       },
     );
   }
+
+  void _showUpdateGroupDialog(WidgetRef ref, PathGroup group) {
+    showDialog(
+      context: ref.context,
+      builder: (context) {
+        return HookConsumer(
+          builder: (context, ref, _) {
+            final groupNameController = useTextEditingController();
+            groupNameController.text = group.name;
+            final collectionId = group.collectionId;
+
+            return AlertDialog(
+              title: const Text("修改组"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: groupNameController,
+                    decoration: const InputDecoration(
+                      labelText: "组名称",
+                      hintText: "输入组名称",
+                      border: OutlineInputBorder(),
+                    ),
+                    autofocus: true,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("取消"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // 验证输入有效性
+                    if (groupNameController.text.isEmpty) {
+                      SmartDialog.showToast("集合名称不能为空");
+                      return;
+                    }
+
+                    // 调用添加集合方法
+                    ref.read(pathConfigProvider.notifier).updateGroupName(
+                          collectionId,
+                          group.id,
+                          groupNameController.text,
+                        );
+
+                    // 关闭对话框并清空输入
+                    groupNameController.clear();
+                    Navigator.pop(context);
+                  },
+                  child: const Text("确认修改"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 }
 
 class _GroupTile extends StatelessWidget {
   final PathGroup group;
   final TreeNode node;
   final VoidCallback onDelete;
+  final VoidCallback onMore;
 
   const _GroupTile({
     required this.group,
     required this.node,
     required this.onDelete,
+    required this.onMore,
   });
 
   @override
@@ -597,6 +663,10 @@ class _GroupTile extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          IconButton(
+            icon: const Icon(Icons.more_horiz),
+            onPressed: onMore,
+          ),
           IconButton(
             icon: const Icon(Icons.delete),
             onPressed: onDelete,
