@@ -389,139 +389,125 @@ class MainScreen extends HookConsumerWidget {
   }
 
   void _showAddDialog(WidgetRef ref) {
-    final nameController = TextEditingController();
-    final pathController = TextEditingController();
-
-    // 重置选择状态
-    ref.read(selectedCollectionIdProvider.notifier).state = null;
-    ref.read(selectedGroupIdProvider.notifier).state = null;
-
     showDialog(
       context: ref.context,
-      builder: (context) {
-        final collections = ref.watch(pathConfigProvider);
+      builder: (context) => HookConsumer(
+        builder: (context, ref, child) {
+          // 文本控制器
+          final nameController = useTextEditingController();
+          final pathController = useTextEditingController();
 
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text("Add New Path"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 集合选择下拉框
-                  DropdownButtonFormField<String?>(
-                    value: ref.watch(selectedCollectionIdProvider),
-                    hint: const Text("Select Collection"),
-                    items: collections.map((collection) {
-                      return DropdownMenuItem(
-                        value: collection.id,
-                        child: Text(collection.name),
-                      );
-                    }).toList(),
-                    onChanged: (collectionId) {
-                      ref.read(selectedCollectionIdProvider.notifier).state =
-                          collectionId;
-                      ref.read(selectedGroupIdProvider.notifier).state = null;
-                      setState(() {});
-                    },
-                  ),
-                  const SizedBox(height: 16),
+          // 局部状态管理
+          final selectedCollectionId = useState<String?>(null);
+          final selectedGroupId = useState<String?>(null);
 
-                  // 组选择下拉框
-                  DropdownButtonFormField<String?>(
-                    value: ref.watch(selectedGroupIdProvider),
-                    hint: const Text("Select Group"),
-                    items: collections
-                        .firstWhere(
-                          (c) {
-                            var watch = ref.watch(selectedCollectionIdProvider);
-                            return c.id == watch;
-                          },
-                          orElse: () => PathCollection(id: '', name: ''),
-                        )
-                        .groups
-                        .map((group) {
-                          return DropdownMenuItem(
+          // 获取集合数据（假设pathConfigProvider是全局状态）
+          final collections = ref.watch(pathConfigProvider);
+
+          return AlertDialog(
+            title: const Text("添加路径"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 集合选择下拉框
+                DropdownButtonFormField<String?>(
+                  value: selectedCollectionId.value,
+                  hint: const Text("选择集合"),
+                  items: collections.map((collection) {
+                    return DropdownMenuItem(
+                      value: collection.id,
+                      child: Text(collection.name),
+                    );
+                  }).toList(),
+                  onChanged: (collectionId) {
+                    selectedCollectionId.value = collectionId;
+                    selectedGroupId.value = null; // 重置组选择
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // 组选择下拉框
+                DropdownButtonFormField<String?>(
+                  value: selectedGroupId.value,
+                  hint: const Text("选择组"),
+                  items: collections
+                      .firstWhere(
+                        (c) => c.id == selectedCollectionId.value,
+                        orElse: () =>
+                            PathCollection(id: '', name: '', groups: []),
+                      )
+                      .groups
+                      .map((group) => DropdownMenuItem(
                             value: group.id,
                             child: Text(group.name),
-                          );
-                        })
-                        .toList(),
-                    onChanged: ref.watch(selectedCollectionIdProvider) != null
-                        ? (groupId) {
-                            ref.read(selectedGroupIdProvider.notifier).state =
-                                groupId;
-                          }
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 路径名称输入
-                  TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: "Name"),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 路径选择
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: pathController,
-                          decoration: const InputDecoration(labelText: "Path"),
-                          readOnly: true,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.folder_open),
-                        onPressed: () async {
-                          final dir =
-                              await FilePicker.platform.getDirectoryPath();
-                          if (dir != null) pathController.text = dir;
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancel"),
+                          ))
+                      .toList(),
+                  onChanged: selectedCollectionId.value != null
+                      ? (groupId) => selectedGroupId.value = groupId
+                      : null,
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    final collectionId = ref.read(selectedCollectionIdProvider);
-                    final groupId = ref.read(selectedGroupIdProvider);
+                const SizedBox(height: 16),
 
-                    if (nameController.text.isEmpty ||
-                        pathController.text.isEmpty ||
-                        collectionId == null ||
-                        groupId == null) {
-                      SmartDialog.showToast("Please fill in all fields.");
-                      return;
-                    }
+                // 路径名称输入
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: "路径名称"),
+                ),
+                const SizedBox(height: 16),
 
-                    ref.read(pathConfigProvider.notifier).addPath(
-                          collectionId: collectionId,
-                          groupId: groupId,
-                          name: nameController.text,
-                          path: pathController.text,
-                        );
-                    Navigator.pop(context);
-                  },
-                  child: const Text("Add"),
+                // 路径选择
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: pathController,
+                        decoration: const InputDecoration(labelText: "路径"),
+                        readOnly: true,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.folder_open),
+                      onPressed: () async {
+                        final dir =
+                            await FilePicker.platform.getDirectoryPath();
+                        if (dir != null) pathController.text = dir;
+                      },
+                    ),
+                  ],
                 ),
               ],
-            );
-          },
-        );
-      },
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("取消"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (nameController.text.isEmpty ||
+                      pathController.text.isEmpty ||
+                      selectedCollectionId.value == null ||
+                      selectedGroupId.value == null) {
+                    SmartDialog.showToast("请填写完整信息");
+                    return;
+                  }
+
+                  ref.read(pathConfigProvider.notifier).addPath(
+                        collectionId: selectedCollectionId.value!,
+                        groupId: selectedGroupId.value!,
+                        name: nameController.text,
+                        path: pathController.text,
+                      );
+                  Navigator.pop(context);
+                },
+                child: const Text("添加"),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
-
-  void _showDeleteDialog(WidgetRef ref) {}
 }
 
 class PathTree extends HookConsumerWidget {
