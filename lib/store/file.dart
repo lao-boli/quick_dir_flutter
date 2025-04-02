@@ -146,8 +146,8 @@ class PathConfig extends _$PathConfig {
     state = [...state, PathCollection(id: IdGenerator.generate(), name: name)];
     _save();
   }
-  void updateCollection(String collectionId,String name) {
 
+  void updateCollection(String collectionId, String name) {
     state = state.map((collection) {
       if (collection.id == collectionId) {
         return collection.copyWith(name: name);
@@ -373,3 +373,88 @@ List<String> searchResults(SearchResultsRef ref) {
 
   return results;
 }
+
+class SearchResult {
+  final List<PathGroup> matchedGroups;
+  final List<PathItem> matchedItems;
+
+  SearchResult({
+    required this.matchedGroups,
+    required this.matchedItems,
+  });
+
+  factory SearchResult.empty() => SearchResult(
+        matchedGroups: [],
+        matchedItems: [],
+      );
+}
+
+final searchTermProvider = StateProvider<String>((ref) => '');
+
+PathCollection _filterCollectionTree(PathCollection collection, String term) {
+  final lowerTerm = term.toLowerCase();
+
+  return collection.copyWith(
+    groups: collection.groups.where((group) {
+      // 保留组本身匹配或包含匹配项的分组
+      return group.name.toLowerCase().contains(lowerTerm) ||
+          group.paths.any((item) => _isItemMatch(item, lowerTerm));
+    }).map((group) {
+      // 复制并过滤组内的路径项
+      return group.copyWith(
+        paths: group.name.toLowerCase().contains(lowerTerm)
+            ? group.paths // 组名匹配时保留所有项
+            : group.paths.where((item) => _isItemMatch(item, lowerTerm)).toList()
+      );
+    }).toList()
+  );
+}
+
+bool _isItemMatch(PathItem item, String lowerTerm) {
+  return item.name.toLowerCase().contains(lowerTerm) ||
+         item.path.toLowerCase().contains(lowerTerm);
+}
+
+final filteredCollectionProvider = Provider<PathCollection?>((ref) {
+  final original = ref.watch(currentCollectionProvider);
+  final term = ref.watch(searchTermProvider);
+
+  if (original == null || term.isEmpty) return original;
+
+  return _filterCollectionTree(original, term);
+});
+
+// // 用于提供搜索结果
+// final searchResultsProvider =
+//     Provider.family<SearchResult, String>((ref, searchTerm) {
+//   final currentCollection = ref.watch(currentCollectionProvider);
+//   if (currentCollection == null || searchTerm.isEmpty) {
+//     return SearchResult.empty();
+//   }
+//
+//   final lowerTerm = searchTerm.toLowerCase();
+//
+//   final matchedGroups = currentCollection.groups.where((group) {
+//     return group.name.toLowerCase().contains(lowerTerm);
+//   }).toList();
+//
+//   final matchedItems = currentCollection.groups.expand((group) {
+//     return group.paths.where((item) {
+//       return item.name.toLowerCase().contains(lowerTerm) ||
+//           item.path.toLowerCase().contains(lowerTerm);
+//     });
+//   }).toList();
+//   ref.read(currentCollectionProvider.notifier).setCurrentCollection(currentCollection.copyWith(
+//       groups: currentCollection.groups.map((group) {
+//         if (group.id == currentCollection.currentGroupId) {
+//           return group.copyWith(paths: matchedItems);
+//         }
+//         return group;
+//       }).toList(),
+//   ));
+//
+//   return SearchResult(
+//     matchedGroups: matchedGroups,
+//     matchedItems: matchedItems,
+//   );
+// });

@@ -32,7 +32,8 @@ class MainScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final searchController = useTextEditingController();
     final paths = ref.watch(pathConfigProvider);
-    final currentCollection = ref.watch(currentCollectionProvider);
+    // final currentCollection = ref.watch(currentCollectionProvider);
+    final currentCollection = ref.watch(filteredCollectionProvider);
     final filteredGroups = currentCollection?.groups ?? [];
     ref.listen<List<PathCollection>>(pathConfigProvider, (_, collections) {
       if (collections.isNotEmpty && currentCollection == null) {
@@ -52,7 +53,7 @@ class MainScreen extends HookConsumerWidget {
             // 集合选择下拉框
             IconButton(
               icon: const Icon(Icons.more_horiz),
-              onPressed: (){
+              onPressed: () {
                 _showUpdateCollectionDialog(ref, currentCollection!);
               },
             ),
@@ -87,11 +88,11 @@ class MainScreen extends HookConsumerWidget {
                   decoration: const InputDecoration(
                     hintText: "搜索...",
                     border: InputBorder.none,
-                    hintStyle: TextStyle(color: Colors.white70),
+                    // hintStyle: TextStyle(color: Colors.white70),
                   ),
-                  style: const TextStyle(color: Colors.white),
+                  // style: const TextStyle(color: Colors.white),
                   onChanged: (value) =>
-                      ref.read(searchQueryProvider.notifier).updateQuery(value),
+                      ref.read(searchTermProvider.notifier).state = value,
                 ),
               ),
             ),
@@ -394,7 +395,7 @@ class MainScreen extends HookConsumerWidget {
     );
   }
 
-  void _showUpdateCollectionDialog(WidgetRef ref,PathCollection collection) {
+  void _showUpdateCollectionDialog(WidgetRef ref, PathCollection collection) {
     showDialog(
       context: ref.context,
       builder: (context) {
@@ -434,9 +435,9 @@ class MainScreen extends HookConsumerWidget {
 
                     // 调用添加集合方法
                     ref.read(pathConfigProvider.notifier).updateCollection(
-                      collection.id,
-                      collectionNameController.text,
-                    );
+                          collection.id,
+                          collectionNameController.text,
+                        );
 
                     // 关闭对话框并清空输入
                     collectionNameController.clear();
@@ -581,7 +582,8 @@ class PathTree extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pathConfig = ref.watch(pathConfigProvider);
     Log.w('rebuild');
-    final currentCollection = ref.watch(currentCollectionProvider);
+    // final currentCollection = ref.watch(currentCollectionProvider);
+    final currentCollection = ref.watch(filteredCollectionProvider);
     final root = TreeNode.root();
     final nodes = currentCollection?.groups.map((group) {
       Log.i(group);
@@ -597,12 +599,18 @@ class PathTree extends HookConsumerWidget {
         );
     }).toList();
     root.addAll(nodes ?? []);
+    final treeViewKey = Key(currentCollection?.id ?? 'default_tree_key');
     // Log.i(root);
 
     return TreeView.simple(
+      key: treeViewKey,
+      onTreeReady: (controller) {
+        Log.i('ready');
+        controller.expandAllChildren(root);
+      },
       tree: root,
       showRootNode: false,
-      expansionBehavior: ExpansionBehavior.collapseOthers,
+      expansionBehavior: ExpansionBehavior.none,
       builder: (context, node) {
         // Log.i(node.childrenAsList);
         if (node.data is PathGroup) {
@@ -776,7 +784,7 @@ class PathTree extends HookConsumerWidget {
                       icon: const Icon(Icons.folder_open),
                       onPressed: () async {
                         final dir =
-                        await FilePicker.platform.getDirectoryPath();
+                            await FilePicker.platform.getDirectoryPath();
                         if (dir != null) pathController.text = dir;
                       },
                     ),
@@ -792,19 +800,18 @@ class PathTree extends HookConsumerWidget {
               ElevatedButton(
                 onPressed: () {
                   if (nameController.text.isEmpty ||
-                      pathController.text.isEmpty
-                     ) {
+                      pathController.text.isEmpty) {
                     SmartDialog.showToast("请填写完整信息");
                     return;
                   }
 
                   ref.read(pathConfigProvider.notifier).updatePath(
-                    collectionId: item.collectionId,
-                    groupId: item.groupId,
-                    pathId: item.id,
-                    name: nameController.text,
-                    path: pathController.text,
-                  );
+                        collectionId: item.collectionId,
+                        groupId: item.groupId,
+                        pathId: item.id,
+                        name: nameController.text,
+                        path: pathController.text,
+                      );
                   Navigator.pop(context);
                 },
                 child: const Text("修改"),
