@@ -5,18 +5,20 @@ import 'package:animated_tree_view/tree_view/tree_node.dart';
 import 'package:animated_tree_view/tree_view/tree_view.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:path/path.dart' as Path;
 import 'package:quick_dir_flutter/store/file.dart';
-import 'package:quick_dir_flutter/test_main.dart';
 import 'package:quick_dir_flutter/util/icon_util.dart';
 import 'package:quick_dir_flutter/util/log.dart';
 import 'package:quick_dir_flutter/util/path.dart';
 import 'package:system_windows/system_windows.dart';
 
+import '../components/windowBar.dart';
 import '../store/tree.dart';
 
 final mainSelectedCollectionIdProvider = StateProvider<String?>((ref) => null);
@@ -49,52 +51,53 @@ class MainScreen extends HookConsumerWidget {
     });
 
     return Scaffold(
-      appBar: AppBar(
-        leadingWidth: 0,
-        title: WindowTitleBarBox(
-          child: Row(
-            children: [
-              Expanded(child: MoveWindow()),
-            ],
-          ),
-        ),
-        actions: [const WindowButtons()],
-      ),
-      body: Scaffold(
-        appBar: AppBar(
-          title: Column(
-            children: [
-              Row(
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            WindowTitleBarBox(
+              child: Container(
+                color: Theme.of(context).appBarTheme.backgroundColor,
+                child: Row(
+                  children: [
+                    Expanded(child: MoveWindow()),
+                    const WindowButtons(), // 原外层AppBar的窗口按钮
+                  ],
+                ),
+              ),
+            ),
+
+            // 原内层AppBar的内容
+            Container(
+              color: Theme.of(context).appBarTheme.backgroundColor,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
                 children: [
-                  // 集合选择下拉框
+                  // 集合操作按钮
                   IconButton(
                     icon: const Icon(Icons.more_horiz),
-                    onPressed: () {
-                      _showUpdateCollectionDialog(ref, currentCollection!);
-                    },
+                    onPressed: () =>
+                        _showUpdateCollectionDialog(ref, currentCollection!),
                   ),
-                  Flexible(
+
+                  // 集合选择下拉框
+                  SizedBox(
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: currentCollection?.id,
-                        hint: const Text('选择集合', style: TextStyle()),
+                        hint: const Text('选择集合'),
                         items: ref.watch(pathConfigProvider).map((collection) {
                           return DropdownMenuItem(
                             value: collection.id,
-                            child: Text(
-                              collection.name,
-                              style: const TextStyle(),
-                            ),
+                            child: Text(collection.name),
                           );
                         }).toList(),
-                        onChanged: (collection) {
-                          ref
-                              .read(currentCollectionProvider.notifier)
-                              .setCurrentCollectionById(collection!);
-                        },
+                        onChanged: (id) => ref
+                            .read(currentCollectionProvider.notifier)
+                            .setCurrentCollectionById(id!),
                       ),
                     ),
                   ),
+
                   // 搜索框
                   Expanded(
                     child: Padding(
@@ -104,43 +107,36 @@ class MainScreen extends HookConsumerWidget {
                         decoration: const InputDecoration(
                           hintText: "搜索...",
                           border: InputBorder.none,
-                          // hintStyle: TextStyle(color: Colors.white70),
                         ),
-                        // style: const TextStyle(color: Colors.white),
                         onChanged: (value) =>
                             ref.read(searchTermProvider.notifier).state = value,
                       ),
                     ),
                   ),
+
+                  // 操作按钮组
+                  IconButton(
+                    icon: getIcon('collection'),
+                    onPressed: () => _showAddCollectionDialog(ref),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.group_add),
+                    onPressed: () => _showAddGroupDialog(ref),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () => _showAddDialog(ref),
+                  ),
                 ],
               ),
-            ],
-          ),
-          actions: [
-            IconButton(
-              icon: getIcon('collection'),
-              onPressed: () => _showAddCollectionDialog(ref),
             ),
-            IconButton(
-              icon: const Icon(Icons.group_add),
-              onPressed: () => _showAddGroupDialog(ref),
-            ),
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () => _showAddDialog(ref),
-            ),
-          ],
-        ),
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+
             filteredGroups.isEmpty
                 ? const Center(child: Text("暂无组"))
                 // : SizedBox(height: MediaQuery.of(context).size.height - 120, child: PathTree()),
-        : Expanded(child: PathTree()) ,
+                : Expanded(child: PathTree()),
           ],
         ),
-      ),
     );
   }
 
