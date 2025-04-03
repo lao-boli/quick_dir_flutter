@@ -156,11 +156,20 @@ class PathConfig extends _$PathConfig {
     }).toList();
 
     _save();
+
+    ref
+        .read(currentCollectionProvider.notifier)
+        .setCurrentCollectionById(collectionId);
   }
 
   // 删除集合
   void deleteCollection(int collectionIndex) {
     state = [...state]..removeAt(collectionIndex);
+    _save();
+  }
+  void deleteCollectionById(String collectionId) {
+    state = state.where((collection) => collection.id != collectionId).toList();
+    ref.read(currentCollectionProvider.notifier).setCurrentCollection(state.first);
     _save();
   }
 

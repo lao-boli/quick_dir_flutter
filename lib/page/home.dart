@@ -21,14 +21,6 @@ import 'package:system_windows/system_windows.dart';
 import '../components/windowBar.dart';
 import '../store/tree.dart';
 
-final mainSelectedCollectionIdProvider = StateProvider<String?>((ref) => null);
-final selectedCollectionIdProvider = StateProvider<String?>((ref) => null);
-final selectedGroupIdProvider = StateProvider<String?>((ref) => null);
-final selectedCollectionProvider =
-    StateProvider<PathCollection?>((ref) => null);
-// final selectedCollectionIdProvider =
-// StateProvider<String?>((ref) => null);
-
 class MainScreen extends HookConsumerWidget {
   const MainScreen({super.key});
 
@@ -76,7 +68,7 @@ class MainScreen extends HookConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.more_horiz),
                   onPressed: () =>
-                      _showUpdateCollectionDialog(ref, currentCollection!),
+                      _showCollectionMenu(context, ref, currentCollection!),
                 ),
 
                 // 集合选择下拉框
@@ -153,6 +145,60 @@ class MainScreen extends HookConsumerWidget {
         });
 
     return Container();
+  }
+
+  void _showCollectionMenu(
+      BuildContext context, WidgetRef ref, PathCollection collection) {
+    final collections = ref.read(pathConfigProvider);
+    final isLastCollection = collections.length <= 1;
+
+    showMenu(
+      context: context,
+      position: const RelativeRect.fromLTRB(0, 70, 10, 10), // 根据需要调整位置
+      items: [
+        PopupMenuItem(
+          value: 'update',
+          child: const Text('修改集合'),
+          onTap: () => _showUpdateCollectionDialog(ref, collection),
+        ),
+        PopupMenuItem(
+          value: 'delete',
+          enabled: !isLastCollection,
+          child: Text('删除集合',
+              style: TextStyle(
+                color: isLastCollection ? Colors.grey : null,
+              )),
+          onTap: isLastCollection
+              ? null
+              : () => _confirmDeleteCollection(ref, collection),
+        ),
+      ],
+    );
+  }
+
+  void _confirmDeleteCollection(WidgetRef ref, PathCollection collection) {
+    showDialog(
+      context: ref.context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除集合'),
+        content: const Text('确定要永久删除该集合及其所有内容吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () {
+              ref
+                  .read(pathConfigProvider.notifier)
+                  .deleteCollectionById(collection.id);
+              Navigator.pop(context);
+            },
+            child: const Text('删除', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget buildTreeNode(WidgetRef ref, BuildContext context, PathNode node) {
@@ -648,8 +694,7 @@ class PathTree extends HookConsumerWidget {
                     builder: (context) {
                       return AlertDialog(
                           title: const Text("删除组"),
-                          content: const Text(
-                              "确定删除该组？"),
+                          content: const Text("确定删除该组？"),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context),
@@ -657,7 +702,9 @@ class PathTree extends HookConsumerWidget {
                             ),
                             TextButton(
                               onPressed: () {
-                                ref.read(pathConfigProvider.notifier).deleteById(node.data.id);
+                                ref
+                                    .read(pathConfigProvider.notifier)
+                                    .deleteById(node.data.id);
                                 Navigator.pop(context);
                               },
                               child: const Text("删除"),
@@ -680,8 +727,7 @@ class PathTree extends HookConsumerWidget {
                   builder: (context) {
                     return AlertDialog(
                         title: const Text("删除路径"),
-                        content: const Text(
-                            "确定删除该路径？"),
+                        content: const Text("确定删除该路径？"),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context),
@@ -690,7 +736,9 @@ class PathTree extends HookConsumerWidget {
                           TextButton(
                             onPressed: () {
                               // ref.read(pathConfigProvider.notifier).deleteById(node.data.id);
-                              ref.read(pathConfigProvider.notifier).deleteById(node.data.id);
+                              ref
+                                  .read(pathConfigProvider.notifier)
+                                  .deleteById(node.data.id);
                               Navigator.pop(context);
                             },
                             child: const Text("删除"),
