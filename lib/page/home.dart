@@ -51,92 +51,92 @@ class MainScreen extends HookConsumerWidget {
     });
 
     return Scaffold(
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            WindowTitleBarBox(
-              child: Container(
-                color: Theme.of(context).appBarTheme.backgroundColor,
-                child: Row(
-                  children: [
-                    Expanded(child: MoveWindow()),
-                    const WindowButtons(), // 原外层AppBar的窗口按钮
-                  ],
-                ),
-              ),
-            ),
-
-            // 原内层AppBar的内容
-            Container(
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          WindowTitleBarBox(
+            child: Container(
               color: Theme.of(context).appBarTheme.backgroundColor,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Row(
                 children: [
-                  // 集合操作按钮
-                  IconButton(
-                    icon: const Icon(Icons.more_horiz),
-                    onPressed: () =>
-                        _showUpdateCollectionDialog(ref, currentCollection!),
-                  ),
-
-                  // 集合选择下拉框
-                  SizedBox(
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: currentCollection?.id,
-                        hint: const Text('选择集合'),
-                        items: ref.watch(pathConfigProvider).map((collection) {
-                          return DropdownMenuItem(
-                            value: collection.id,
-                            child: Text(collection.name),
-                          );
-                        }).toList(),
-                        onChanged: (id) => ref
-                            .read(currentCollectionProvider.notifier)
-                            .setCurrentCollectionById(id!),
-                      ),
-                    ),
-                  ),
-
-                  // 搜索框
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 16),
-                      child: TextField(
-                        controller: searchController,
-                        decoration: const InputDecoration(
-                          hintText: "搜索...",
-                          border: InputBorder.none,
-                        ),
-                        onChanged: (value) =>
-                            ref.read(searchTermProvider.notifier).state = value,
-                      ),
-                    ),
-                  ),
-
-                  // 操作按钮组
-                  IconButton(
-                    icon: getIcon('collection'),
-                    onPressed: () => _showAddCollectionDialog(ref),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.group_add),
-                    onPressed: () => _showAddGroupDialog(ref),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () => _showAddDialog(ref),
-                  ),
+                  Expanded(child: MoveWindow()),
+                  const WindowButtons(), // 原外层AppBar的窗口按钮
                 ],
               ),
             ),
+          ),
 
-            filteredGroups.isEmpty
-                ? const Center(child: Text("暂无组"))
-                // : SizedBox(height: MediaQuery.of(context).size.height - 120, child: PathTree()),
-                : Expanded(child: PathTree()),
-          ],
-        ),
+          // 原内层AppBar的内容
+          Container(
+            color: Theme.of(context).appBarTheme.backgroundColor,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              children: [
+                // 集合操作按钮
+                IconButton(
+                  icon: const Icon(Icons.more_horiz),
+                  onPressed: () =>
+                      _showUpdateCollectionDialog(ref, currentCollection!),
+                ),
+
+                // 集合选择下拉框
+                SizedBox(
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: currentCollection?.id,
+                      hint: const Text('选择集合'),
+                      items: ref.watch(pathConfigProvider).map((collection) {
+                        return DropdownMenuItem(
+                          value: collection.id,
+                          child: Text(collection.name),
+                        );
+                      }).toList(),
+                      onChanged: (id) => ref
+                          .read(currentCollectionProvider.notifier)
+                          .setCurrentCollectionById(id!),
+                    ),
+                  ),
+                ),
+
+                // 搜索框
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 16),
+                    child: TextField(
+                      controller: searchController,
+                      decoration: const InputDecoration(
+                        hintText: "搜索...",
+                        border: InputBorder.none,
+                      ),
+                      onChanged: (value) =>
+                          ref.read(searchTermProvider.notifier).state = value,
+                    ),
+                  ),
+                ),
+
+                // 操作按钮组
+                IconButton(
+                  icon: getIcon('collection'),
+                  onPressed: () => _showAddCollectionDialog(ref),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.group_add),
+                  onPressed: () => _showAddGroupDialog(ref),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: () => _showAddDialog(ref),
+                ),
+              ],
+            ),
+          ),
+
+          filteredGroups.isEmpty
+              ? const Center(child: Text("暂无组"))
+              // : SizedBox(height: MediaQuery.of(context).size.height - 120, child: PathTree()),
+              : Expanded(child: PathTree()),
+        ],
+      ),
     );
   }
 
@@ -637,14 +637,34 @@ class PathTree extends HookConsumerWidget {
         if (node.data is PathGroup) {
           final group = node.data as PathGroup;
           return _GroupTile(
-            group: node.data as PathGroup,
-            node: node,
-            onMore: () {
-              _showUpdateGroupDialog(ref, group);
-            },
-            onDelete: () =>
-                ref.read(pathConfigProvider.notifier).deleteById(node.data.id),
-          );
+              group: node.data as PathGroup,
+              node: node,
+              onMore: () {
+                _showUpdateGroupDialog(ref, group);
+              },
+              onDelete: () {
+                showDialog(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                          title: const Text("删除组"),
+                          content: const Text(
+                              "确定删除该组？"),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text("取消"),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                ref.read(pathConfigProvider.notifier).deleteById(node.data.id);
+                                Navigator.pop(context);
+                              },
+                              child: const Text("删除"),
+                            )
+                          ]);
+                    });
+              });
         }
         if (node.data is PathItem) {
           final item = node.data as PathItem;
@@ -654,8 +674,30 @@ class PathTree extends HookConsumerWidget {
             onMore: () {
               _showUpdateUpdateDialog(ref, item);
             },
-            onDelete: () =>
-                ref.read(pathConfigProvider.notifier).deleteById(node.data.id),
+            onDelete: () {
+              showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                        title: const Text("删除路径"),
+                        content: const Text(
+                            "确定删除该路径？"),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text("取消"),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              // ref.read(pathConfigProvider.notifier).deleteById(node.data.id);
+                              ref.read(pathConfigProvider.notifier).deleteById(node.data.id);
+                              Navigator.pop(context);
+                            },
+                            child: const Text("删除"),
+                          )
+                        ]);
+                  });
+            },
           );
         }
         return const SizedBox.shrink();
