@@ -16,7 +16,7 @@ void openPath(String key) async {
   final titles = activeApps.map((e) => e.title).toList();
 
   if (titles.any((element) => containsPathInTitle(element, path))) {
-    Process.run('D:\\projects\\IdeaProjects\\quick_dir\\windowutil.exe',
+    Process.run('windowutil.exe',
         ["window-to-top", path]).then((value) {
       if (value.exitCode != 0) {
         // SmartDialog.showToast('窗口未找到');

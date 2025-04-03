@@ -548,7 +548,7 @@ class MainScreen extends HookConsumerWidget {
                       child: TextField(
                         controller: pathController,
                         decoration: const InputDecoration(labelText: "路径"),
-                        readOnly: true,
+                        // readOnly: true,
                       ),
                     ),
                     IconButton(
