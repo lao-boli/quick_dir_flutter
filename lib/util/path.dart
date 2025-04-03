@@ -13,11 +13,14 @@ void openPath(String key) async {
   var systemWindows = SystemWindows();
 
   final activeApps = await systemWindows.getActiveApps();
-  final titles = activeApps.map((e) => e.title).toList();
+  Log.i(activeApps);
+  final titles = activeApps
+      .where((element) => element.name == 'explorer.exe')
+      .map((e) => e.title)
+      .toList();
 
   if (titles.any((element) => containsPathInTitle(element, path))) {
-    Process.run('windowutil.exe',
-        ["window-to-top", path]).then((value) {
+    Process.run('windowutil.exe', ["window-to-top", path]).then((value) {
       if (value.exitCode != 0) {
         // SmartDialog.showToast('窗口未找到');
       }

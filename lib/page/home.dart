@@ -52,7 +52,7 @@ class MainScreen extends HookConsumerWidget {
 
     return Scaffold(
       body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        // mainAxisAlignment: MainAxisAlignment.center,
         children: [
           WindowTitleBarBox(
             child: Container(
@@ -132,9 +132,9 @@ class MainScreen extends HookConsumerWidget {
           ),
 
           filteredGroups.isEmpty
-              ? const Center(child: Text("暂无组"))
+              ? const Expanded(child: Center(child: Text("暂无组")))
               // : SizedBox(height: MediaQuery.of(context).size.height - 120, child: PathTree()),
-              : Expanded(child: PathTree()),
+              : const Expanded(child: PathTree()),
         ],
       ),
     );
