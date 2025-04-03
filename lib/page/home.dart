@@ -50,74 +50,97 @@ class MainScreen extends HookConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            // 集合选择下拉框
-            IconButton(
-              icon: const Icon(Icons.more_horiz),
-              onPressed: () {
-                _showUpdateCollectionDialog(ref, currentCollection!);
-              },
-            ),
-            Flexible(
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: currentCollection?.id,
-                  hint: const Text('选择集合', style: TextStyle()),
-                  items: ref.watch(pathConfigProvider).map((collection) {
-                    return DropdownMenuItem(
-                      value: collection.id,
-                      child: Text(
-                        collection.name,
-                        style: const TextStyle(),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (collection) {
-                    ref
-                        .read(currentCollectionProvider.notifier)
-                        .setCurrentCollectionById(collection!);
-                  },
-                ),
-              ),
-            ),
-            // 搜索框
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 16),
-                child: TextField(
-                  controller: searchController,
-                  decoration: const InputDecoration(
-                    hintText: "搜索...",
-                    border: InputBorder.none,
-                    // hintStyle: TextStyle(color: Colors.white70),
+        leadingWidth: 0,
+        title: WindowTitleBarBox(
+          child: Row(
+            children: [
+              Expanded(child: MoveWindow()),
+            ],
+          ),
+        ),
+        actions: [const WindowButtons()],
+      ),
+      body: Scaffold(
+        appBar: AppBar(
+          title: Column(
+            children: [
+              Row(
+                children: [
+                  // 集合选择下拉框
+                  IconButton(
+                    icon: const Icon(Icons.more_horiz),
+                    onPressed: () {
+                      _showUpdateCollectionDialog(ref, currentCollection!);
+                    },
                   ),
-                  // style: const TextStyle(color: Colors.white),
-                  onChanged: (value) =>
-                      ref.read(searchTermProvider.notifier).state = value,
-                ),
+                  Flexible(
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: currentCollection?.id,
+                        hint: const Text('选择集合', style: TextStyle()),
+                        items: ref.watch(pathConfigProvider).map((collection) {
+                          return DropdownMenuItem(
+                            value: collection.id,
+                            child: Text(
+                              collection.name,
+                              style: const TextStyle(),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (collection) {
+                          ref
+                              .read(currentCollectionProvider.notifier)
+                              .setCurrentCollectionById(collection!);
+                        },
+                      ),
+                    ),
+                  ),
+                  // 搜索框
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 16),
+                      child: TextField(
+                        controller: searchController,
+                        decoration: const InputDecoration(
+                          hintText: "搜索...",
+                          border: InputBorder.none,
+                          // hintStyle: TextStyle(color: Colors.white70),
+                        ),
+                        // style: const TextStyle(color: Colors.white),
+                        onChanged: (value) =>
+                            ref.read(searchTermProvider.notifier).state = value,
+                      ),
+                    ),
+                  ),
+                ],
               ),
+            ],
+          ),
+          actions: [
+            IconButton(
+              icon: getIcon('collection'),
+              onPressed: () => _showAddCollectionDialog(ref),
+            ),
+            IconButton(
+              icon: const Icon(Icons.group_add),
+              onPressed: () => _showAddGroupDialog(ref),
+            ),
+            IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => _showAddDialog(ref),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: getIcon('collection'),
-            onPressed: () => _showAddCollectionDialog(ref),
-          ),
-          IconButton(
-            icon: const Icon(Icons.group_add),
-            onPressed: () => _showAddGroupDialog(ref),
-          ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _showAddDialog(ref),
-          ),
-        ],
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            filteredGroups.isEmpty
+                ? const Center(child: Text("暂无组"))
+                // : SizedBox(height: MediaQuery.of(context).size.height - 120, child: PathTree()),
+        : Expanded(child: PathTree()) ,
+          ],
+        ),
       ),
-      body: filteredGroups.isEmpty
-          ? const Center(child: Text("暂无组"))
-          : const PathTree(),
     );
   }
 
